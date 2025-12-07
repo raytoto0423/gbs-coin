@@ -26,7 +26,26 @@ export default async function UserPayPage({
         );
     }
 
-    const { activity: activityId } = await searchParams;
+    const { activity: rawActivity } = await searchParams;
+
+    // 🔎 QR에서 넘어온 값이
+    // 1) 순수 id
+    // 2) 전체 URL (…/user/pay?activity=xxx)
+    // 3) "activity=xxx" 형식
+    // 어느 쪽이어도 activityId만 뽑아내도록 보정
+    let activityId: string | null = null;
+
+    if (rawActivity) {
+        // 1) 먼저 "URL처럼 생겼는지" 확인
+        try {
+            const maybeUrl = new URL(rawActivity);
+            activityId = maybeUrl.searchParams.get("activity") ?? rawActivity;
+        } catch {
+            // 2) URL 파싱이 안 되면, 그냥 문자열에서 activity=xxx 패턴을 찾아본다
+            const match = rawActivity.match(/activity=([^&]+)/);
+            activityId = match?.[1] ?? rawActivity;
+        }
+    }
 
     if (!activityId) {
         return (
