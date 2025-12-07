@@ -1,57 +1,61 @@
 // app/booth/qr/[id]/page.tsx
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import QRCode from "qrcode";
+import Link from "next/link";
 
-export default async function QRPage({
-                                         params,
-                                     }: {
+export default async function BoothQRPage({
+                                              params,
+                                          }: {
     params: Promise<{ id: string }>;
 }) {
-    const session = await auth();
-
-    if (!session?.user || session.user.role !== "BOOTH") {
-        return (
-            <main className="min-h-screen flex items-center justify-center">
-                <p>부스 계정으로만 접근할 수 있습니다.</p>
-            </main>
-        );
-    }
-
-    // 🔥 여기 중요: params를 await 해서 id 꺼내기
-    const { id: activityId } = await params;
+    const { id } = await params;
 
     const activity = await prisma.activity.findUnique({
-        where: { id: activityId },
+        where: { id },
+        include: { booth: true },
     });
 
-    if (!activity) {
+    if (!activity || !activity.booth) {
         return (
             <main className="min-h-screen flex items-center justify-center">
-                <p>활동을 찾을 수 없습니다.</p>
+                <p>존재하지 않는 활동입니다.</p>
             </main>
         );
     }
 
-    // .env에 NEXTAUTH_URL이 꼭 있어야 함 (예: http://localhost:3000)
     const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
     const paymentUrl = `${baseUrl}/user/pay?activity=${activity.id}`;
 
     const qrDataUrl = await QRCode.toDataURL(paymentUrl);
 
     return (
-        <main className="min-h-screen flex flex-col items-center justify-center p-4 space-y-6">
-            <h1 className="text-2xl font-bold">{activity.title} QR 코드</h1>
+        <main className="min-h-screen flex flex-col items-center justify-center gap-6 p-4">
+            {/* 제목/설명 */}
+            <div className="text-center space-y-2">
+                <h1 className="text-2xl font-bold">결제 QR 코드</h1>
+                <p className="text-gray-600">
+                    부스: {activity.booth.name}
+                    <br />
+                    상품: {activity.title} ({activity.price} C)
+                </p>
+            </div>
 
-            <img src={qrDataUrl} alt="QR Code" className="w-64 h-64" />
+            {/* QR 이미지 */}
+            <div className="bg-white p-4 rounded-xl shadow">
+                <img
+                    src={qrDataUrl}
+                    alt="결제 QR 코드"
+                    className="w-64 h-64"
+                />
+            </div>
 
-            <p className="text-gray-500 text-sm">
-                가격: {activity.price} 코인 · 타입: {activity.type}
-            </p>
-
-            <p className="text-xs text-gray-400 break-all text-center">
-                스캔 시 이동: {paymentUrl}
-            </p>
+            {/* ✅ 부스 화면으로 돌아가기 버튼 */}
+            <Link
+                href="/booth"
+                className="mt-2 px-4 py-2 rounded-md border text-sm hover:bg-gray-100"
+            >
+                부스 화면으로 돌아가기
+            </Link>
         </main>
     );
 }

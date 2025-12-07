@@ -6,72 +6,59 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function UserScanPage() {
-    const videoRef = useRef<HTMLVideoElement | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [scanning, setScanning] = useState(false);
     const router = useRouter();
+    const [error, setError] = useState<string | null>(null);
+    const scannedRef = useRef(false);
+    const scannerRef = useRef<any>(null);
 
     useEffect(() => {
-        let stream: MediaStream | null = null;
-        let intervalId: number | null = null;
-        let canceled = false;
+        let isCancelled = false;
 
-        const start = async () => {
-            // 브라우저 지원 여부 확인
-            const hasBarcodeDetector =
-                typeof window !== "undefined" &&
-                "BarcodeDetector" in window &&
-                // @ts-ignore
-                Array.isArray(window.BarcodeDetector.getSupportedFormats?.());
-
-            if (!hasBarcodeDetector) {
-                setError(
-                    "이 브라우저에서는 QR 스캔을 지원하지 않습니다. 카메라 앱으로 QR을 찍으면 결제 페이지가 열립니다."
-                );
-                return;
-            }
-
+        const startScanner = async () => {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" },
-                });
+                const { Html5QrcodeScanner } = await import("html5-qrcode");
 
-                if (!videoRef.current) return;
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
+                const config = {
+                    fps: 10,
+                    qrbox: {
+                        width: 250,
+                        height: 250,
+                    },
+                };
 
-                // @ts-ignore
-                const detector = new window.BarcodeDetector({
-                    formats: ["qr_code"],
-                });
+                scannerRef.current = new Html5QrcodeScanner(
+                    "qr-reader",
+                    config,
+                    false
+                );
 
-                intervalId = window.setInterval(async () => {
-                    if (canceled) return;
-                    if (!videoRef.current) return;
+                const onScanSuccess = (decodedText: string) => {
+                    if (scannedRef.current) return;
+                    scannedRef.current = true;
 
-                    try {
-                        // 비디오 프레임을 바로 감지 대상으로 사용
-                        const barcodes = await detector.detect(videoRef.current);
-                        if (barcodes.length > 0) {
-                            const raw = barcodes[0].rawValue as string;
-                            handleDetected(raw);
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }, 700);
+                    scannerRef.current
+                        ?.clear()
+                        .catch(() => {})
+                        .finally(() => {
+                            handleDecoded(decodedText);
+                        });
+                };
+
+                const onScanError = (_err: any) => {
+                    // 콘솔에만 찍고 UI는 조용히 유지
+                    // console.warn(_err);
+                };
+
+                scannerRef.current.render(onScanSuccess, onScanError);
             } catch (e) {
                 console.error(e);
-                setError(
-                    "카메라에 접근할 수 없습니다. 브라우저 권한을 확인하거나 카메라 앱으로 QR을 찍어 주세요."
-                );
+                if (!isCancelled) {
+                    setError("QR 스캐너를 초기화할 수 없습니다.");
+                }
             }
         };
 
-        const handleDetected = (value: string) => {
-            if (scanning) return;
-            setScanning(true);
-
+        const handleDecoded = (value: string) => {
             try {
                 let activityId: string | null = null;
 
@@ -85,33 +72,30 @@ export default function UserScanPage() {
 
                 if (!activityId) {
                     setError("QR 코드 형식이 올바르지 않습니다.");
-                    setScanning(false);
+                    scannedRef.current = false;
                     return;
                 }
 
-                // 결제 페이지로 이동
                 router.push(`/user/pay?activity=${activityId}`);
             } catch (e) {
                 console.error(e);
                 setError("QR 코드 해석 중 오류가 발생했습니다.");
-                setScanning(false);
+                scannedRef.current = false;
             }
         };
 
-        start();
+        startScanner();
 
         return () => {
-            canceled = true;
-            if (intervalId !== null) window.clearInterval(intervalId);
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
+            isCancelled = true;
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(() => {});
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [router]);
 
     return (
-        <main className="min-h-screen flex flex-col items-center justify-center p-4 space-y-4">
+        <main className="min-h-screen flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-md space-y-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-xl font-bold">QR 스캔해서 결제하기</h1>
@@ -124,29 +108,20 @@ export default function UserScanPage() {
                 </div>
 
                 <p className="text-sm text-gray-600">
-                    부스에서 보여주는 QR 코드를 화면 중앙에 두고 잠시 기다리면 자동으로
+                    부스에서 보여주는 QR 코드를 사각형 안에 맞춰주세요. 인식되면 자동으로
                     결제 화면으로 이동합니다.
                 </p>
 
-                {/* 카메라 프리뷰 */}
-                <div className="aspect-square w-full max-w-md bg-black rounded-xl overflow-hidden flex items-center justify-center">
-                    {error ? (
-                        <p className="text-sm text-red-500 p-4 text-center">{error}</p>
-                    ) : (
-                        <video
-                            ref={videoRef}
-                            className="w-full h-full object-cover"
-                            playsInline
-                            muted
-                        />
-                    )}
-                </div>
+                {error && (
+                    <p className="text-sm text-red-600 border border-red-200 rounded-md p-2">
+                        {error}
+                    </p>
+                )}
 
-                <p className="text-xs text-gray-500">
-                    일부 브라우저(특히 오래된 브라우저)에서는 QR 스캔을 지원하지 않을 수
-                    있습니다. 이 경우 카메라 앱으로 QR을 찍으면 자동으로 결제 페이지가
-                    열립니다.
-                </p>
+                <div
+                    id="qr-reader"
+                    className="w-full aspect-square rounded-xl border bg-black overflow-hidden"
+                />
             </div>
         </main>
     );
