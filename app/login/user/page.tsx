@@ -19,7 +19,7 @@ export default function UserLoginPage() {
 
     const handleLogin = async () => {
         setLoading(true);
-        await signIn("google"); // 로그인 완료 후 다시 이 페이지로 돌아옴
+        await signIn("google", { callbackUrl: "/user" });// 로그인 완료 후 다시 이 페이지로 돌아옴
         setLoading(false);
     };
 
