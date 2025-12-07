@@ -27,7 +27,7 @@ export default function AdminDashboard({
     booths: BoothSummary[];
 }) {
     const [userList, setUserList] = useState(users);
-    const [boothList] = useState(booths);
+    const [boothList, setBoothList] = useState(booths);
 
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
