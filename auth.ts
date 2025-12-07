@@ -49,18 +49,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 password: { label: "비밀번호", type: "password" },
             },
             async authorize(credentials) {
-                if (!credentials?.boothId || !credentials?.password) return null;
+                // 🔥 여기서 타입을 확실히 string으로 캐스팅
+                const boothId = credentials?.boothId as string | undefined;
+                const password = credentials?.password as string | undefined;
+
+                if (!boothId || !password) return null;
 
                 const booth = await prisma.booth.findUnique({
-                    where: { id: credentials.boothId },
+                    where: { id: boothId },
                 });
                 if (!booth) return null;
 
                 const bcrypt = await import("bcryptjs");
-                const ok = await bcrypt.compare(
-                    credentials.password,
-                    booth.passwordHash
-                );
+                const ok = await bcrypt.compare(password, booth.passwordHash);
                 if (!ok) return null;
 
                 return {
@@ -82,8 +83,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 role: { label: "역할(STUDENT/TEACHER/ADMIN)", type: "text" },
             },
             async authorize(credentials) {
-                const email = credentials?.email?.trim();
-                const roleInput = (credentials?.role ?? "").toUpperCase();
+                const email = credentials?.email as string | undefined;
+                const roleInput = (credentials?.role as string | undefined)?.toUpperCase() ?? "";
 
                 if (!email) return null;
 
