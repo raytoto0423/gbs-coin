@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         data: {
             fromUserId: null,
             toUserId: null,
-            boothId: booth.id,
+            toBoothId: booth.id,
             amount: body.delta,
             title: body.delta > 0 ? "관리자 부스 충전" : "관리자 부스 차감",
         },
