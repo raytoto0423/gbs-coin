@@ -89,7 +89,7 @@ export default async function UserPage() {
                         <form action="/api/auth/signout" method="post">
                             <button
                                 type="submit"
-                                className="inline-block mt-3 px-3 py-2 border rounded-md text-sm hover:bg-gray-100"
+                                className="inline-block mt-3 ml-2 px-4 py-2 rounded-md text-sm  bg-red-600 text-white hover:bg-red-700 shadow"
                             >
                                 로그아웃
                             </button>
