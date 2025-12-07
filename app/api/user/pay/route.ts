@@ -72,7 +72,7 @@ export async function POST(request: Request) {
                     },
                 });
             } else {
-                // type === "REWARD"
+                // types === "REWARD"
                 // 부스 → 학생/선생님
                 if (booth.balance < price) {
                     throw new Error("INSUFFICIENT_BOOTH_BALANCE");

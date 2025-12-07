@@ -1,56 +1,46 @@
-// auth.ts
-import NextAuth, { type NextAuthConfig } from "next-auth";
+// auth.ts (프로젝트 루트)
+
+// NextAuth v5 스타일
+import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import { compare } from "bcryptjs";
+import { prisma } from "./lib/prisma";
 
 const SCHOOL_EMAIL_REGEX =
     /^gbs\.(s|t)(\d{2})(\d{4})@ggh\.goe\.go\.kr$/i;
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
+// ✅ next-auth 타입 확장 (jwt 모듈 건드리지 않음)
 declare module "next-auth" {
-    interface User {
-        id: string;
-        name: string;
-        email: string;
-        role: string;   // "STUDENT" | "TEACHER" | "ADMIN" | "BOOTH"
-        boothId?: string | null;
-    }
-
     interface Session {
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string | null;
             role: string;
             boothId?: string | null;
         };
     }
-}
 
-declare module "next-auth/jwt" {
-    interface JWT {
-        userId?: string;
-        role?: string;
+    interface User {
+        id: string;
+        email: string;
+        name: string | null;
+        role: string;
         boothId?: string | null;
     }
 }
 
-const authConfig: NextAuthConfig = {
+export const { auth, handlers, signIn, signOut } = NextAuth({
     providers: [
-        //
-        // 1) 구글 로그인 (학생/선생/관리자)
-        //
+        // 1) 구글 로그인 (학생/선생님/관리자)
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
 
-        //
-        // 2) 부스 로그인 (반 부스 ID + 비밀번호)
-        //
+        // 2) 부스 로그인 (부스 ID + 비밀번호)
         Credentials({
             id: "booth-login",
             name: "Booth Login",
@@ -64,33 +54,81 @@ const authConfig: NextAuthConfig = {
                 const booth = await prisma.booth.findUnique({
                     where: { id: credentials.boothId },
                 });
-
                 if (!booth) return null;
 
-                const ok = await compare(credentials.password, booth.passwordHash);
+                const bcrypt = await import("bcryptjs");
+                const ok = await bcrypt.compare(
+                    credentials.password,
+                    booth.passwordHash
+                );
                 if (!ok) return null;
 
-                // 부스 계정용 유저 객체
                 return {
                     id: booth.id,
+                    email: `${booth.id}@booth.local`,
                     name: booth.name,
-                    email: `${booth.id}@booth.local`, // 형식 맞추기용 가짜 이메일
                     role: "BOOTH",
                     boothId: booth.id,
                 };
             },
         }),
+
+        // 3) (옵션) 개발용 유저 로그인 – 필요 없으면 이 블록 전체 삭제해도 됨
+        Credentials({
+            id: "dev-user",
+            name: "Dev User Login",
+            credentials: {
+                email: { label: "이메일(임의)", type: "text" },
+                role: { label: "역할(STUDENT/TEACHER/ADMIN)", type: "text" },
+            },
+            async authorize(credentials) {
+                const email = credentials?.email?.trim();
+                const roleInput = (credentials?.role ?? "").toUpperCase();
+
+                if (!email) return null;
+
+                const role =
+                    roleInput === "TEACHER"
+                        ? "TEACHER"
+                        : roleInput === "ADMIN"
+                            ? "ADMIN"
+                            : "STUDENT";
+
+                const user = await prisma.user.upsert({
+                    where: { email },
+                    update: { role },
+                    create: {
+                        email,
+                        name: email,
+                        role,
+                    },
+                });
+
+                return {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    role: user.role,
+                };
+            },
+        }),
     ],
 
+    pages: {
+        signIn: "/login/user",
+    },
+
+    session: {
+        strategy: "jwt",
+    },
+
     callbacks: {
-        //
-        // 1) signIn: 구글 로그인 이메일 필터링 & User 생성/업데이트
-        //
+        // ✅ 구글 로그인 시 이메일/역할 검증 + DB upsert
         async signIn({ user, account }) {
             if (account?.provider === "google") {
                 const email = user.email ?? "";
 
-                // 관리자 메일 허용
+                // 관리자
                 if (email === ADMIN_EMAIL) {
                     await prisma.user.upsert({
                         where: { email },
@@ -104,14 +142,11 @@ const authConfig: NextAuthConfig = {
                     return true;
                 }
 
-                // 학교 이메일 형식 체크
+                // 학교 이메일만 허용
                 const match = email.match(SCHOOL_EMAIL_REGEX);
-                if (!match) {
-                    // 학교 계정도 아니고 관리자도 아니면 거절
-                    return false;
-                }
+                if (!match) return false;
 
-                const kind = match[1].toLowerCase(); // 's' or 't'
+                const kind = match[1].toLowerCase(); // s/t
                 const role = kind === "s" ? "STUDENT" : "TEACHER";
 
                 await prisma.user.upsert({
@@ -127,60 +162,50 @@ const authConfig: NextAuthConfig = {
                 return true;
             }
 
-            // 부스(Credentials)는 authorize에서 이미 검증함
+            // 부스/개발용 로그인은 여기서 따로 막지 않음
             return true;
         },
 
-        //
-        // 2) JWT 토큰에 userId/role/boothId 싣기
-        //
+        // ✅ JWT에 우리가 쓸 값 저장 (타입은 any로 넉넉하게)
         async jwt({ token, user, account }) {
-            // 로그인 직후
+            const t: any = token;
+
             if (user && account) {
-                if (account.provider === "google") {
+                if (account.provider === "google" || account.provider === "dev-user") {
                     const dbUser = await prisma.user.findUnique({
                         where: { email: user.email! },
                     });
 
                     if (dbUser) {
-                        token.userId = dbUser.id;
-                        token.role = dbUser.role;
-                        token.boothId = null;
+                        t.userId = dbUser.id;
+                        t.role = dbUser.role;
+                        t.boothId = null;
                     }
-                }
-                // 👇 여기만 변경: "credentials" → "booth-login"
-                else if (account.provider === "booth-login") {
-                    token.userId = user.id as string;
-                    token.role = "BOOTH";
-                    token.boothId = (user as any).boothId ?? user.id;
+                } else if (account.provider === "booth-login") {
+                    t.userId = (user as any).id;
+                    t.role = "BOOTH";
+                    t.boothId = (user as any).boothId ?? (user as any).id;
                 }
             }
 
-            return token;
+            return t;
         },
-        //
-        // 3) 세션 객체에 토큰 정보 복사
-        //
+
+        // ✅ 세션에 우리가 쓸 user 정보 세팅
         async session({ session, token }) {
+            const t: any = token;
+
             if (session.user) {
-                session.user.id = (token.userId as string) ?? "";
+                session.user.id = t.userId ?? "";
                 session.user.email = session.user.email ?? "";
-                session.user.role = (token.role as string) ?? "";
-                session.user.boothId = (token.boothId as string | null) ?? null;
+                session.user.name = session.user.name ?? "";
+                session.user.role = t.role ?? "";
+                session.user.boothId = t.boothId ?? null;
             }
+
             return session;
         },
     },
 
-    pages: {
-        signIn: "/login/user", // 기본 로그인 페이지
-    },
-
-    session: {
-        strategy: "jwt",
-    },
-
-    secret: process.env.NEXTAUTH_SECRET,
-};
-
-export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
+    secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+});
