@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 공통 색 변수 (라이트 기준) */
 :root {
     --page-bg: 248, 250, 252;   /* 배경: 연한 회색 (bg-slate-50 느낌) */
