@@ -35,7 +35,7 @@ export default function BoothLoginPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1">
+                        <label className="block text-sm font-medium mb-1 hover:bg-gray-500">
                             부스 ID (예: 1-1, 2-3)
                         </label>
                         <input
@@ -47,7 +47,7 @@ export default function BoothLoginPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">
+                        <label className="block text-sm font-medium mb-1 hover:bg-gray-500">
                             비밀번호
                         </label>
                         <input
@@ -75,7 +75,7 @@ export default function BoothLoginPage() {
                     </p>
                     <Link
                         href="/login/user"
-                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-50"
+                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-500"
                     >
                         학생/선생님 로그인 페이지로 이동
                     </Link>
