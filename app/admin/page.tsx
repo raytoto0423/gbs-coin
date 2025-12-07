@@ -2,17 +2,25 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import LogoutButton from "@/components/LogoutButton";
+import AdminDashboard from "./AdminDashboard";
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
 export default async function AdminPage() {
     const session = await auth();
 
-    // 🔐 관리자 이메일이 아니면 거부
+    // 🔐 관리자 이메일이 아니면 바로 차단 (DB 조회도 안 함)
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return (
-            <main className="min-h-screen flex items-center justify-center">
-                <p>관리자만 접근할 수 있습니다.</p>
+            <main className="min-h-screen flex items-center justify-center px-4">
+                <div className="text-center space-y-2">
+                    <h1 className="text-xl font-bold text-gray-900">
+                        관리자만 접근할 수 있습니다.
+                    </h1>
+                    <p className="text-sm text-gray-600">
+                        관리자 계정을 사용해 로그인했는지 확인해 주세요.
+                    </p>
+                </div>
             </main>
         );
     }
@@ -42,10 +50,6 @@ export default async function AdminPage() {
                     <LogoutButton />
                 </div>
 
-                {/* 기존 AdminDashboard 사용 */}
-                {/* AdminDashboard는 이전에 만든 그대로 두면 됨 */}
-                {/* props 형태만 맞춰서 전달 */}
-                {/* @ts-ignore 단순화용 */}
                 <AdminDashboard
                     users={users.map((u) => ({
                         id: u.id,

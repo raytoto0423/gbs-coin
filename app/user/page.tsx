@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 
-const ADMIN_EMAIL = "dhhwang423@gmail.com"; // 🔥 관리자 이메일 상수
+    const ADMIN_EMAIL = "dhhwang423@gmail.com"; // 🔥 관리자 이메일 상수
 
 export default async function UserPage() {
     const session = await auth();
@@ -52,8 +52,7 @@ export default async function UserPage() {
         );
     }
 
-    const isAdminAccount =
-        user.email === ADMIN_EMAIL || user.role === "ADMIN";
+    const isAdminAccount = user.email === ADMIN_EMAIL;
 
     // 🔐 관리자 계정은 이 페이지에서 지갑 기능 사용 불가
     if (isAdminAccount) {
