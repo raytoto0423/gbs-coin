@@ -2,8 +2,8 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import Link from "next/link";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function UserLoginPage() {
     const { status } = useSession();
@@ -15,17 +15,22 @@ export default function UserLoginPage() {
         setLoading(false);
     };
 
+    const handleLogout = () => {
+        signOut({ callbackUrl: "/login/user" });
+    };
+
     return (
         <main className="min-h-screen flex items-center justify-center px-4">
             <div className="w-full max-w-md border rounded-xl p-6 shadow-sm bg-white">
-                <h1 className="text-2xl font-bold mb-2 text-gray-900">GBS 축제 코인 시스템</h1>
-                <p className="text-sm text-gray-600 mb-6">
+                <h1 className="text-2xl font-bold mb-2 text-gray-900">
+                    GBS 축제 코인 시스템
+                </h1>
+                <p className="text-sm text-gray-700 mb-6">
                     학교에서 발급된 구글 계정으로만 로그인할 수 있습니다.
                     <br />
                     (예: <code>gbs.s25XXXX@ggh.goe.go.kr</code>)
                 </p>
 
-                {/* ✔ 로그인 상태일 때 버튼 바뀜 (자동 리다이렉트 없음) */}
                 {status === "authenticated" ? (
                     <div className="space-y-3">
                         <Link
@@ -35,14 +40,13 @@ export default function UserLoginPage() {
                             내 정보로 이동
                         </Link>
 
-                        <form action="/api/auth/signout?callbackUrl=/login/user" method="post">
-                            <button
-                                type="submit"
-                                className="w-full py-2 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700"
-                            >
-                                로그아웃
-                            </button>
-                        </form>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="w-full py-2 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700"
+                        >
+                            로그아웃
+                        </button>
                     </div>
                 ) : (
                     <button

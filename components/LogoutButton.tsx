@@ -3,16 +3,25 @@
 
 import { signOut } from "next-auth/react";
 
-export default function LogoutButton() {
+export default function LogoutButton({
+                                         className = "",
+                                         redirectTo = "/login/user",
+                                     }: {
+    className?: string;
+    redirectTo?: string;
+}) {
     const handleLogout = () => {
-        // 로그아웃 후 메인 페이지(/)로 이동
-        signOut({ callbackUrl: "/" });
+        signOut({ callbackUrl: redirectTo });
     };
 
     return (
         <button
+            type="button"
             onClick={handleLogout}
-            className="px-3 py-1 rounded-md border text-sm hover:bg-gray-100"
+            className={
+                className ||
+                "inline-block px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700 shadow"
+            }
         >
             로그아웃
         </button>
