@@ -33,6 +33,7 @@ declare module "next-auth" {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+    trustHost: true,
     providers: [
         // 1) 구글 로그인 (학생/선생님/관리자)
         Google({
