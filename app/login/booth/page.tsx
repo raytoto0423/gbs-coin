@@ -22,39 +22,39 @@ export default function BoothLoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center px-4">
-            <div className="w-full max-w-md border rounded-xl p-6 shadow-sm bg-white space-y-6">
+        <main className="min-h-screen flex items-center justify-center px-4 text-gray-900 dark:text-gray-100">
+            <div className="card w-full max-w-md border rounded-xl p-6 shadow-sm space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold mb-2 text-gray-900">
+                    <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
                         부스 로그인
                     </h1>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                         반 부스 ID와 초기 비밀번호(반장 전화번호 뒤 4자리)를 입력하세요.
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1 hover:bg-gray-500">
+                        <label className="block text-sm font-medium mb-1 text-gray-800 dark:text-gray-200">
                             부스 ID (예: 1-1, 2-3)
                         </label>
                         <input
                             value={boothId}
                             onChange={(e) => setBoothId(e.target.value)}
-                            className="w-full border rounded-md px-3 py-2 text-sm"
+                            className="w-full border rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-gray-100"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1 hover:bg-gray-500">
+                        <label className="block text-sm font-medium mb-1 text-gray-800 dark:text-gray-200">
                             비밀번호
                         </label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full border rounded-md px-3 py-2 text-sm"
+                            className="w-full border rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-gray-100"
                             required
                         />
                     </div>
@@ -69,13 +69,13 @@ export default function BoothLoginPage() {
                 </form>
 
                 {/* 🔹 학생/선생님 로그인으로 가는 버튼 */}
-                <div className="pt-2 border-t mt-4">
-                    <p className="text-xs text-gray-600 mb-2">
+                <div className="pt-2 border-t mt-4 border-gray-200 dark:border-slate-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                         학생/선생님은 아래 버튼을 눌러 개인 계정으로 로그인해 주세요.
                     </p>
                     <Link
                         href="/login/user"
-                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-500"
+                        className="block w-full py-2 rounded-md border text-center text-sm border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700"
                     >
                         학생/선생님 로그인 페이지로 이동
                     </Link>

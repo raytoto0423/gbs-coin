@@ -4,15 +4,26 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 
-    const ADMIN_EMAIL = "dhhwang423@gmail.com"; // 🔥 관리자 이메일 상수
+const ADMIN_EMAIL = "dhhwang423@gmail.com"; // 🔥 관리자 이메일 상수
 
 export default async function UserPage() {
     const session = await auth();
 
     if (!session?.user) {
         return (
-            <main className="min-h-screen flex items-center justify-center">
-                <p>로그인 후 이용할 수 있습니다.</p>
+            <main className="min-h-screen flex items-center justify-center px-4 text-gray-900 dark:text-gray-100">
+                <div className="card max-w-md w-full p-6 rounded-lg border shadow-sm text-center space-y-2">
+                    <h1 className="text-xl font-bold">로그인이 필요합니다.</h1>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                        로그인 후 이용할 수 있습니다.
+                    </p>
+                    <Link
+                        href="/login/user"
+                        className="inline-block mt-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                    >
+                        로그인 페이지로 이동
+                    </Link>
+                </div>
             </main>
         );
     }
@@ -46,8 +57,19 @@ export default async function UserPage() {
 
     if (!user) {
         return (
-            <main className="min-h-screen flex items-center justify-center">
-                <p>유저 정보를 찾을 수 없습니다.</p>
+            <main className="min-h-screen flex items-center justify-center px-4 text-gray-900 dark:text-gray-100">
+                <div className="card max-w-md w-full p-6 rounded-lg border shadow-sm text-center space-y-2">
+                    <h1 className="text-xl font-bold">유저 정보를 찾을 수 없습니다.</h1>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                        다시 로그인해 주세요.
+                    </p>
+                    <Link
+                        href="/login/user"
+                        className="inline-block mt-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                    >
+                        로그인 페이지로 이동
+                    </Link>
+                </div>
             </main>
         );
     }
@@ -57,11 +79,9 @@ export default async function UserPage() {
     // 🔐 관리자 계정은 이 페이지에서 지갑 기능 사용 불가
     if (isAdminAccount) {
         return (
-            <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4">
-                <h1 className="text-2xl font-bold text-gray-900">
-                    관리자 계정입니다.
-                </h1>
-                <p className="text-sm text-gray-700 text-center">
+            <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4 text-gray-900 dark:text-gray-100">
+                <h1 className="text-2xl font-bold">관리자 계정입니다.</h1>
+                <p className="text-sm text-gray-700 dark:text-gray-300 text-center">
                     관리자는 학생/선생님처럼 코인을 보유하거나 결제할 수 없습니다.
                     <br />
                     관리자 페이지를 사용해 주세요.
@@ -81,14 +101,16 @@ export default async function UserPage() {
 
     // 🔽 여기부터는 일반 학생/선생님 지갑 화면
     return (
-        <main className="max-w-2xl mx-auto px-4 py-8 space-y-10">
+        <main className="max-w-2xl mx-auto px-4 py-8 space-y-10 text-gray-900 dark:text-gray-100">
             {/* 헤더 */}
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-50">
+                    <h1 className="text-2xl font-bold">
                         {user.name}님 환영합니다.
                     </h1>
-                    <p className="text-gray-600 text-sm">{user.email}</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">
+                        {user.email}
+                    </p>
                 </div>
 
                 {/* 상단 오른쪽 로그아웃 버튼 */}
@@ -96,10 +118,10 @@ export default async function UserPage() {
             </div>
 
             {/* 잔액 카드 */}
-            <section className="p-4 border rounded-lg shadow-sm bg-white space-y-2">
+            <section className="card p-4 border rounded-lg shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             보유 코인
                         </h2>
                         <p className="text-3xl font-bold text-blue-600">
@@ -120,12 +142,12 @@ export default async function UserPage() {
 
             {/* 최근 거래 내역 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3 text-gray-50">
+                <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
                     최근 거래 내역
                 </h2>
 
                 {transactions.length === 0 ? (
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
                         최근 거래 내역이 없습니다.
                     </p>
                 ) : (
@@ -141,12 +163,12 @@ export default async function UserPage() {
                             return (
                                 <div
                                     key={t.id}
-                                    className="p-3 border rounded-md bg-white shadow-sm"
+                                    className="card p-3 border rounded-md shadow-sm"
                                 >
-                                    <p className="text-sm font-medium">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                         {t.title ?? "거래"}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
                                         {new Date(t.createdAt).toLocaleString("ko-KR", {
                                             timeZone: "Asia/Seoul",
                                         })}
@@ -158,17 +180,17 @@ export default async function UserPage() {
 
                                     {/* 상대 정보 표시 */}
                                     {t.toBooth && (
-                                        <p className="text-xs text-gray-600">
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
                                             부스: {t.toBooth.name}
                                         </p>
                                     )}
                                     {!t.toBooth && isIncoming && t.fromUser && (
-                                        <p className="text-xs text-gray-600">
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
                                             보낸 사람: {t.fromUser.name ?? t.fromUser.email}
                                         </p>
                                     )}
                                     {!t.toBooth && !isIncoming && t.toUser && (
-                                        <p className="text-xs text-gray-600">
+                                        <p className="text-xs text-gray-600 dark:text-gray-300">
                                             받은 사람: {t.toUser.name ?? t.toUser.email}
                                         </p>
                                     )}

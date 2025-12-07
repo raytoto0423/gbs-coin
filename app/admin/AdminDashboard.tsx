@@ -207,14 +207,14 @@ export default function AdminDashboard({
                 </p>
 
                 {/* 일괄 처리 컨트롤 */}
-                <div className="flex flex-wrap items-end gap-3 p-3 border rounded-md bg-gray-50">
+                <div className="card flex flex-wrap items-end gap-3 p-3 border rounded-md">
                     <div className="space-y-1">
-            <span className="text-xs font-semibold text-gray-700">
-              일괄 작업 대상:
-            </span>
+                        <span className="text-xs font-semibold text-gray-700">
+                            일괄 작업 대상:
+                        </span>
                         <span className="text-xs text-gray-600 ml-1">
-              선택된 {selectedUserIds.length}명
-            </span>
+                            선택된 {selectedUserIds.length}명
+                        </span>
                     </div>
 
                     <div className="flex items-center gap-2 text-sm">
@@ -274,14 +274,17 @@ export default function AdminDashboard({
                 </div>
 
                 {/* 유저 테이블 */}
-                <div className="max-h-80 overflow-auto border rounded-lg">
+                <div className="card max-h-80 overflow-auto border rounded-lg">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100">
                         <tr>
                             <th className="p-2 text-center">
                                 <input
                                     type="checkbox"
-                                    checked={selectedUserIds.length === userList.length && userList.length > 0}
+                                    checked={
+                                        selectedUserIds.length === userList.length &&
+                                        userList.length > 0
+                                    }
                                     onChange={toggleSelectAllUsers}
                                 />
                             </th>
@@ -319,8 +322,12 @@ export default function AdminDashboard({
                                         className="inline-flex items-center gap-1"
                                         onSubmit={(e) => {
                                             e.preventDefault();
-                                            const formData = new FormData(e.currentTarget);
-                                            const deltaStr = String(formData.get("delta") ?? "0");
+                                            const formData = new FormData(
+                                                e.currentTarget
+                                            );
+                                            const deltaStr = String(
+                                                formData.get("delta") ?? "0"
+                                            );
                                             adjustUser(u.id, deltaStr);
                                             e.currentTarget.reset();
                                         }}
@@ -344,7 +351,10 @@ export default function AdminDashboard({
                         ))}
                         {userList.length === 0 && (
                             <tr>
-                                <td className="p-2 text-center text-gray-500" colSpan={6}>
+                                <td
+                                    className="p-2 text-center text-gray-500"
+                                    colSpan={6}
+                                >
                                     아직 등록된 유저가 없습니다.
                                 </td>
                             </tr>
@@ -361,7 +371,7 @@ export default function AdminDashboard({
                     부스별 잔액을 개별 조정할 수 있습니다.
                 </p>
 
-                <div className="max-h-80 overflow-auto border rounded-lg">
+                <div className="card max-h-80 overflow-auto border rounded-lg">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100">
                         <tr>
@@ -384,8 +394,12 @@ export default function AdminDashboard({
                                         className="inline-flex items-center gap-1"
                                         onSubmit={(e) => {
                                             e.preventDefault();
-                                            const formData = new FormData(e.currentTarget);
-                                            const deltaStr = String(formData.get("delta") ?? "0");
+                                            const formData = new FormData(
+                                                e.currentTarget
+                                            );
+                                            const deltaStr = String(
+                                                formData.get("delta") ?? "0"
+                                            );
                                             adjustBooth(b.id, deltaStr);
                                             e.currentTarget.reset();
                                         }}
@@ -409,7 +423,10 @@ export default function AdminDashboard({
                         ))}
                         {boothList.length === 0 && (
                             <tr>
-                                <td className="p-2 text-center text-gray-500" colSpan={4}>
+                                <td
+                                    className="p-2 text-center text-gray-500"
+                                    colSpan={4}
+                                >
                                     아직 등록된 부스가 없습니다.
                                 </td>
                             </tr>

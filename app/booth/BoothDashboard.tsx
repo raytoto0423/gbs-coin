@@ -86,13 +86,16 @@ export default function BoothDashboard({ boothId }: BoothDashboardProps) {
     return (
         <div className="w-full max-w-3xl space-y-6">
             <div className="space-y-1">
-                <h1 className="text-2xl font-bold">부스 대시보드</h1>
+                <h1 className="text-2xl font-bold text-gray-900">부스 대시보드</h1>
                 <p className="text-sm text-gray-600">
                     부스 ID: <span className="font-mono">{boothId}</span>
                 </p>
             </div>
+
             <LogoutButton />
-            <section className="border rounded-lg p-4 space-y-4">
+
+            {/* 새 상품/활동 등록 카드 */}
+            <section className="card border rounded-lg p-4 space-y-4">
                 <h2 className="font-semibold">새 상품 / 활동 등록</h2>
                 <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-4">
                     <input
@@ -108,7 +111,9 @@ export default function BoothDashboard({ boothId }: BoothDashboardProps) {
                         min={0}
                         placeholder="가격(코인)"
                         value={price}
-                        onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                        onChange={(e) =>
+                            setPrice(e.target.value === "" ? "" : Number(e.target.value))
+                        }
                         required
                     />
                     <select
@@ -130,7 +135,8 @@ export default function BoothDashboard({ boothId }: BoothDashboardProps) {
                 {error && <p className="text-sm text-red-600">{error}</p>}
             </section>
 
-            <section className="border rounded-lg p-4 space-y-3">
+            {/* 등록된 활동 리스트 카드 */}
+            <section className="card border rounded-lg p-4 space-y-3">
                 <h2 className="font-semibold">등록된 활동</h2>
                 {activities.length === 0 ? (
                     <p className="text-sm text-gray-500">등록된 활동이 없습니다.</p>
@@ -139,12 +145,13 @@ export default function BoothDashboard({ boothId }: BoothDashboardProps) {
                         {activities.map((a) => (
                             <li
                                 key={a.id}
-                                className="flex items-center justify-between border rounded-md px-3 py-2 text-sm"
+                                className="card flex items-center justify-between border rounded-md px-3 py-2 text-sm"
                             >
                                 <div>
                                     <div className="font-medium">{a.title}</div>
                                     <div className="text-xs text-gray-500">
-                                        {a.price} 코인 · {a.type === "PAY" ? "학생이 지불" : "학생이 받음"}
+                                        {a.price} 코인 ·{" "}
+                                        {a.type === "PAY" ? "학생이 지불" : "학생이 받음"}
                                     </div>
                                 </div>
 
