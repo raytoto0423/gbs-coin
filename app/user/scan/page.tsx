@@ -9,10 +9,13 @@ export default function UserScanPage() {
     const qrRef = useRef<Html5Qrcode | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
+    const hasScanned = useRef(false); // 🔥 중복 인식 방지용
 
     useEffect(() => {
         const startScanner = async () => {
             try {
+                if (hasScanned.current) return;
+
                 setScanning(true);
 
                 const html5Qr = new Html5Qrcode("qr-reader", {
@@ -23,13 +26,21 @@ export default function UserScanPage() {
 
                 await html5Qr.start(
                     { facingMode: "environment" },
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                    },
-                    (decodedText) => {
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+
+                    // 🔥 QR 인식 콜백
+                    async (decodedText) => {
+                        if (hasScanned.current) return; // 중복 방지
+                        hasScanned.current = true;
+
+                        // 🔴 QR 인식 즉시 카메라 종료
+                        await html5Qr.stop().catch(() => {});
+                        qrRef.current = null;
+
+                        // 🔴 이후 redirect
                         window.location.href = `/user/pay?activity=${decodedText}`;
                     },
+
                     () => {}
                 );
             } catch (e) {
