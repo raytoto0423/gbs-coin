@@ -20,33 +20,27 @@ export default function UserLoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center px-4 text-gray-900 dark:text-gray-100">
-            <div className="card w-full max-w-md border rounded-xl p-6 shadow-sm space-y-6">
+        <main className="min-h-screen flex items-center justify-center px-4">
+            <div className="w-full max-w-md border rounded-xl p-6 shadow-sm bg-white space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                    <h1 className="text-2xl font-bold mb-2 text-gray-900">
                         GBS 축제 코인 시스템
                     </h1>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                    <p className="text-sm text-gray-700">
                         학교에서 발급된 구글 계정으로만 로그인할 수 있습니다.
                         <br />
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                            (예:{" "}
-                            <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-800 dark:text-gray-100">
-                                gbs.s25XXXX@ggh.goe.go.kr
-                            </code>
-                            )
-                        </span>
+                        (예: <code>gbs.s25XXXX@ggh.goe.go.kr</code>)
                     </p>
                 </div>
 
                 {/* 🔹 부스 로그인으로 가는 버튼 */}
                 <div className="space-y-2">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600">
                         반 부스 담당자는 부스 전용 로그인 페이지를 이용해 주세요.
                     </p>
                     <Link
                         href="/login/booth"
-                        className="block w-full py-2 rounded-md border text-center text-sm border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700"
+                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-150"
                     >
                         부스 로그인 페이지로 이동
                     </Link>

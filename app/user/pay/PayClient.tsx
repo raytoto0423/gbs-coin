@@ -8,7 +8,7 @@ interface PayClientProps {
     activityId: string;
     activityTitle: string;
     price: number;
-    type: string;
+    type: string; // "PAY" | "REWARD"
     boothName: string;
     userBalance: number;
 }
@@ -47,6 +47,8 @@ export default function PayClient({
         }
 
         setMessage(data.message ?? "결제가 완료되었습니다.");
+        // 몇 초 후 메인으로 보내고 싶으면 아래처럼
+        // setTimeout(() => router.push("/user"), 1500);
     };
 
     const handleCancel = () => {
@@ -54,70 +56,42 @@ export default function PayClient({
     };
 
     return (
-        <div className="card w-full max-w-md border rounded-xl p-6 space-y-4 shadow-sm text-gray-900 dark:text-gray-100">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                결제 확인
-            </h1>
+        <div className="w-full max-w-md border rounded-xl p-6 space-y-4 shadow-sm">
+            <h1 className="text-xl font-bold">결제 확인</h1>
 
             <div className="space-y-1 text-sm">
                 <p>
-                    <span className="font-semibold">부스:</span>{" "}
-                    {boothName}
+                    <span className="font-semibold">부스:</span> {boothName}
                 </p>
                 <p>
-                    <span className="font-semibold">활동:</span>{" "}
-                    {activityTitle}
+                    <span className="font-semibold">활동:</span> {activityTitle}
                 </p>
                 <p>
-                    <span className="font-semibold">가격:</span>{" "}
-                    {price} 코인
+                    <span className="font-semibold">가격:</span> {price} 코인
                 </p>
                 <p>
                     <span className="font-semibold">타입:</span>{" "}
-                    {type === "PAY"
-                        ? "학생이 코인을 지불 (PAY)"
-                        : "학생이 코인을 받음 (REWARD)"}
+                    {type === "PAY" ? "학생이 코인을 지불 (PAY)" : "학생이 코인을 받음 (REWARD)"}
                 </p>
-                <p className="text-gray-600 dark:text-gray-300">
-                    현재 내 잔액:{" "}
-                    <span className="font-mono font-semibold">
-                        {userBalance}
-                    </span>{" "}
-                    코인
+                <p className="text-gray-600">
+                    현재 내 잔액: <span className="font-mono font-semibold">{userBalance}</span> 코인
                 </p>
             </div>
 
-            {error && (
-                <p className="text-sm text-red-600">{error}</p>
-            )}
-            {message && (
-                <p className="text-sm text-green-600">{message}</p>
-            )}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {message && <p className="text-sm text-green-600">{message}</p>}
 
             <div className="flex gap-2">
                 <button
                     onClick={handleConfirm}
                     disabled={loading}
-                    className="
-                        flex-1 py-2 rounded-md bg-blue-600 text-white
-                        text-sm font-semibold hover:bg-blue-700
-                        disabled:opacity-60
-                    "
+                    className="flex-1 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
                 >
-                    {loading
-                        ? "처리 중..."
-                        : type === "PAY"
-                            ? "결제하기"
-                            : "코인 받기"}
+                    {loading ? "처리 중..." : type === "PAY" ? "결제하기" : "코인 받기"}
                 </button>
-
                 <button
                     onClick={handleCancel}
-                    className="
-                        flex-1 py-2 rounded-md border text-sm
-                        hover:bg-gray-100 dark:hover:bg-slate-700
-                        dark:border-slate-600
-                    "
+                    className="flex-1 py-2 rounded-md border text-sm hover:bg-gray-100"
                 >
                     취소
                 </button>

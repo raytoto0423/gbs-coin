@@ -1,35 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* 공통 색 변수 (라이트 기준) */
 :root {
-    --page-bg: 248, 250, 252;   /* 배경: 연한 회색 (bg-slate-50 느낌) */
-    --page-fg: 15, 23, 42;      /* 기본 글자: 진한 남색 (text-slate-900) */
-
-    --card-bg: 255, 255, 255;   /* 카드/박스 배경 */
-    --card-border: 229, 231, 235; /* 카드 테두리 */
+    --background: #ffffff;
+    --foreground: #171717;
 }
 
-/* 다크 모드일 때만 값 교체 */
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+}
+
 @media (prefers-color-scheme: dark) {
     :root {
-        --page-bg: 15, 23, 42;      /* 아주 어두운 배경 */
-        --page-fg: 241, 245, 249;   /* 밝은 글자 */
-
-        --card-bg: 17, 24, 39;      /* 카드도 어두운 회색 */
-        --card-border: 55, 65, 81;  /* 테두리 어둡게 */
+        --background: #0a0a0a;
+        --foreground: #ededed;
     }
 }
 
-/* 전체 페이지 배경/글자색은 이 변수만 사용 */
 body {
-    background-color: rgb(var(--page-bg));
-    color: rgb(var(--page-fg));
-}
-
-/* 카드/박스에 공통으로 붙일 클래스 */
-.card {
-    background-color: rgb(var(--card-bg));
-    border-color: rgb(var(--card-border));
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
 }

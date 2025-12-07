@@ -35,8 +35,6 @@ export default function UserScanPage() {
             } catch (e) {
                 setError("카메라를 사용할 수 없습니다. 권한을 허용해주세요.");
                 console.error(e);
-            } finally {
-                setScanning(false);
             }
         };
 
@@ -50,32 +48,20 @@ export default function UserScanPage() {
     }, []);
 
     return (
-        <main className="min-h-screen px-4 py-6 space-y-6 text-gray-900 dark:text-gray-100">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                QR 스캔하여 결제하기
-            </h1>
+        <main className="min-h-screen px-4 py-6 space-y-6">
+            <h1 className="text-2xl font-bold">QR 스캔하여 결제하기</h1>
 
-            {error && (
-                <p className="text-sm text-red-600">
-                    {error}
-                </p>
-            )}
+            {error && <p className="text-red-600">{error}</p>}
 
             <div
                 id="qr-reader"
-                className="card w-full max-w-sm mx-auto border rounded-lg overflow-hidden"
+                className="w-full max-w-sm mx-auto border rounded-lg overflow-hidden"
                 style={{ minHeight: 300 }}
             />
 
-            <div className="flex items-center justify-between max-w-sm mx-auto">
-                <span className="text-xs text-gray-600 dark:text-gray-400">
-                    카메라가 켜지지 않으면, 브라우저에서 카메라 권한을 허용해 주세요.
-                </span>
-            </div>
-
             <Link
                 href="/user"
-                className="inline-block mt-4 px-4 py-2 border rounded-md text-sm border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700"
+                className="inline-block mt-4 px-4 py-2 border rounded-md hover:bg-gray-100"
             >
                 ← 내 정보로 돌아가기
             </Link>
