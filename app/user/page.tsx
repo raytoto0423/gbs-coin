@@ -1,154 +1,118 @@
-// app/user/scan/page.tsx
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+// app/user/page.tsx
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
-export default function UserScanPage() {
-    const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
-    const [isStarting, setIsStarting] = useState(true);
-    const qrRef = useRef<any>(null);
-    const handledOnceRef = useRef(false);
+export default async function UserPage() {
+    const session = await auth();
 
-    useEffect(() => {
-        let cancelled = false;
+    if (!session?.user) {
+        return (
+            <main className="min-h-screen flex items-center justify-center">
+                <p>로그인 후 이용할 수 있습니다.</p>
+            </main>
+        );
+    }
 
-        const handleDecoded = (value: string) => {
-            if (handledOnceRef.current) return;
-            handledOnceRef.current = true;
+    const userId = session.user.id;
 
-            try {
-                let activityId: string | null = null;
+    // DB에서 유저 정보 + 최근 트랜잭션 10개 가져오기
+    const [user, transactions] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, name: true, balance: true, role: true, email: true },
+        }),
+        prisma.transaction.findMany({
+            where: {
+                OR: [
+                    { fromUserId: userId },
+                    { toUserId: userId },
+                ],
+            },
+            orderBy: { createdAt: "desc" },
+            take: 10,
+            include: { booth: true, userTo: true, userFrom: true },
+        }),
+    ]);
 
-                if (value.startsWith("http://") || value.startsWith("https://")) {
-                    const url = new URL(value);
-                    activityId = url.searchParams.get("activity");
-                } else {
-                    // 혹시 activity id만 들어있는 QR일 경우
-                    activityId = value;
-                }
-
-                if (!activityId) {
-                    setError("QR 코드 형식이 올바르지 않습니다.");
-                    handledOnceRef.current = false;
-                    return;
-                }
-
-                router.push(`/user/pay?activity=${activityId}`);
-            } catch (e) {
-                console.error(e);
-                setError("QR 코드 해석 중 오류가 발생했습니다.");
-                handledOnceRef.current = false;
-            }
-        };
-
-        const startScanner = async () => {
-            try {
-                const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import(
-                    "html5-qrcode"
-                    );
-
-                if (cancelled) return;
-
-                // div#qr-reader 안에 카메라 프리뷰만 띄우는 방식
-                const html5Qr = new Html5Qrcode("qr-reader", {
-                    verbose: false,
-                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                });
-                qrRef.current = html5Qr;
-
-                // 사용 가능한 카메라 목록 가져오기
-                const cameras = await Html5Qrcode.getCameras();
-                if (!cameras || cameras.length === 0) {
-                    setError("사용 가능한 카메라를 찾을 수 없습니다.");
-                    return;
-                }
-
-                // 가능한 경우 후면 카메라 우선 선택
-                const backCamera =
-                    cameras.find((c) =>
-                        /back|후면|environment/i.test(c.label || "")
-                    ) ?? cameras[0];
-
-                await html5Qr.start(
-                    backCamera.id,
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                    },
-                    (decodedText: string) => {
-                        if (cancelled) return;
-                        handleDecoded(decodedText);
-                    },
-                    () => {
-                        // 스캔 실패 콜백은 무시 (계속 시도)
-                    }
-                );
-
-                if (!cancelled) setIsStarting(false);
-            } catch (e) {
-                console.error(e);
-                if (!cancelled) {
-                    setError(
-                        "카메라를 시작할 수 없습니다. 브라우저 권한을 확인해 주세요."
-                    );
-                }
-            }
-        };
-
-        startScanner();
-
-        return () => {
-            cancelled = true;
-            if (qrRef.current) {
-                qrRef.current
-                    .stop()
-                    .catch(() => {})
-                    .finally(() => {
-                        qrRef.current?.clear().catch(() => {});
-                    });
-            }
-        };
-    }, [router]);
+    if (!user) {
+        return (
+            <main className="min-h-screen flex items-center justify-center">
+                <p>유저 정보를 찾을 수 없습니다.</p>
+            </main>
+        );
+    }
 
     return (
-        <main className="min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md space-y-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-bold">QR 스캔해서 결제하기</h1>
-                    <Link
-                        href="/user"
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        ← 내 정보로 돌아가기
-                    </Link>
-                </div>
+        <main className="max-w-2xl mx-auto px-4 py-8 space-y-10">
+            {/* 헤더 */}
+            <div className="space-y-1">
+                <h1 className="text-2xl font-bold">{user.name}님 환영합니다.</h1>
+                <p className="text-gray-500 text-sm">{session.user.email}</p>
+            </div>
 
-                <p className="text-sm text-gray-600">
-                    부스에서 보여주는 QR 코드를 사각형 안에 맞춰주세요. 인식되면 자동으로
-                    결제 화면으로 이동합니다.
+            {/* 잔액 카드 */}
+            <section className="p-4 border rounded-lg shadow-sm bg-white">
+                <h2 className="text-lg font-semibold mb-2">보유 코인</h2>
+                <p className="text-3xl font-bold text-blue-600">
+                    {user.balance.toLocaleString()} C
                 </p>
 
-                {error && (
-                    <p className="text-sm text-red-600 border border-red-200 rounded-md p-2">
-                        {error}
-                    </p>
-                )}
+                {/* 결제 버튼 */}
+                <Link
+                    href="/user/scan"
+                    className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                    QR 스캔하여 결제하기
+                </Link>
 
-                {isStarting && !error && (
-                    <p className="text-sm text-gray-500">
-                        카메라를 준비하는 중입니다. 브라우저에서 카메라 권한을 허용해 주세요.
-                    </p>
+                {/* 관리자 전용 버튼 */}
+                {user.role === "ADMIN" && (
+                    <Link
+                        href="/admin"
+                        className="inline-block mt-3 ml-2 px-3 py-2 border rounded-md text-sm hover:bg-gray-100"
+                    >
+                        관리자 페이지로 이동
+                    </Link>
                 )}
+            </section>
 
-                {/* 🔥 이 영역 안에 html5-qrcode가 카메라 프리뷰를 직접 그려줌 */}
-                <div
-                    id="qr-reader"
-                    className="w-full aspect-square rounded-xl border bg-black overflow-hidden"
-                />
-            </div>
+            {/* 최근 거래 내역 */}
+            <section>
+                <h2 className="text-lg font-semibold mb-3">최근 거래 내역</h2>
+
+                {transactions.length === 0 ? (
+                    <p className="text-gray-500 text-sm">최근 거래 내역이 없습니다.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {transactions.map((t) => (
+                            <div
+                                key={t.id}
+                                className="p-3 border rounded-md bg-white shadow-sm"
+                            >
+                                <p className="text-sm font-medium">
+                                    {t.title ?? "거래"}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                    {new Date(t.createdAt).toLocaleString()}
+                                </p>
+
+                                <p
+                                    className={`mt-1 text-lg font-bold ${
+                                        t.toUserId === userId || t.toBoothId ? "text-green-600" : "text-red-600"
+                                    }`}
+                                >
+                                    {t.amount > 0 ? `+${t.amount}` : t.amount} C
+                                </p>
+
+                                {t.booth && (
+                                    <p className="text-xs text-gray-600">부스: {t.booth.name}</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
         </main>
     );
 }
