@@ -54,6 +54,7 @@ export default function UserScanPage() {
 
                 // div#qr-reader 안에 카메라 프리뷰만 띄우는 방식
                 const html5Qr = new Html5Qrcode("qr-reader", {
+                    verbose: false,
                     formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                 });
                 qrRef.current = html5Qr;
