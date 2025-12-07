@@ -226,7 +226,7 @@ export default function AdminDashboard({
                                 checked={bulkMode === "SET"}
                                 onChange={() => setBulkMode("SET")}
                             />
-                            <span>잔액을</span>
+                            <span className="text-gray-900">잔액을</span>
                         </label>
 
                         <label className="flex items-center gap-1">
@@ -237,7 +237,7 @@ export default function AdminDashboard({
                                 checked={bulkMode === "ADD"}
                                 onChange={() => setBulkMode("ADD")}
                             />
-                            <span>잔액에 추가</span>
+                            <span className="text-gray-900">잔액에 추가</span>
                         </label>
 
                         <label className="flex items-center gap-1">
@@ -248,7 +248,7 @@ export default function AdminDashboard({
                                 checked={bulkMode === "CLEAR"}
                                 onChange={() => setBulkMode("CLEAR")}
                             />
-                            <span>잔액 0으로</span>
+                            <span className="text-gray-900">잔액 0으로</span>
                         </label>
                     </div>
 
