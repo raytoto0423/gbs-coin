@@ -285,11 +285,11 @@ export default function AdminDashboard({
                                     onChange={toggleSelectAllUsers}
                                 />
                             </th>
-                            <th className="p-2 text-left">이름</th>
-                            <th className="p-2 text-left">이메일</th>
-                            <th className="p-2 text-left">역할</th>
-                            <th className="p-2 text-right">잔액</th>
-                            <th className="p-2 text-center">개별 조정</th>
+                            <th className="p-2 text-left text-gray-900">이름</th>
+                            <th className="p-2 text-left text-gray-900">이메일</th>
+                            <th className="p-2 text-left text-gray-900">역할</th>
+                            <th className="p-2 text-right text-gray-900">잔액</th>
+                            <th className="p-2 text-center text-gray-900">개별 조정</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -365,10 +365,10 @@ export default function AdminDashboard({
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100">
                         <tr>
-                            <th className="p-2 text-left">부스 ID</th>
-                            <th className="p-2 text-left">이름</th>
-                            <th className="p-2 text-right">잔액</th>
-                            <th className="p-2 text-center">조정</th>
+                            <th className="p-2 text-left text-gray-900">부스 ID</th>
+                            <th className="p-2 text-left text-gray-900">이름</th>
+                            <th className="p-2 text-right text-gray-900">잔액</th>
+                            <th className="p-2 text-center text-gray-900">조정</th>
                         </tr>
                         </thead>
                         <tbody>
