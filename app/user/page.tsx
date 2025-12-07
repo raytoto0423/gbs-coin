@@ -86,6 +86,15 @@ export default async function UserPage() {
                                 관리자 페이지로 이동
                             </Link>
                         )}
+                        <form action="/api/auth/signout" method="post">
+                            <button
+                                type="submit"
+                                className="inline-block mt-3 px-3 py-2 border rounded-md text-sm hover:bg-gray-100"
+                            >
+                                로그아웃
+                            </button>
+                        </form>
+
                     </div>
                 </div>
             </section>

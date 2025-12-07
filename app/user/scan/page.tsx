@@ -2,127 +2,69 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import Link from "next/link";
 
 export default function UserScanPage() {
-    const router = useRouter();
+    const qrRef = useRef<Html5Qrcode | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const scannedRef = useRef(false);
-    const scannerRef = useRef<any>(null);
+    const [scanning, setScanning] = useState(false);
 
     useEffect(() => {
-        let isCancelled = false;
-
         const startScanner = async () => {
             try {
-                const { Html5QrcodeScanner } = await import("html5-qrcode");
+                setScanning(true);
 
-                const config = {
-                    fps: 10,
-                    qrbox: {
-                        width: 250,
-                        height: 250,
+                const html5Qr = new Html5Qrcode("qr-reader", {
+                    verbose: false,
+                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                });
+                qrRef.current = html5Qr;
+
+                await html5Qr.start(
+                    { facingMode: "environment" },
+                    {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
                     },
-                };
-
-                scannerRef.current = new Html5QrcodeScanner(
-                    "qr-reader",
-                    config,
-                    false
+                    (decodedText) => {
+                        window.location.href = `/user/pay?activity=${decodedText}`;
+                    },
+                    () => {}
                 );
-
-                const onScanSuccess = (decodedText: string) => {
-                    if (scannedRef.current) return;
-                    scannedRef.current = true;
-
-                    scannerRef.current
-                        ?.clear()
-                        .catch(() => {})
-                        .finally(() => {
-                            handleDecoded(decodedText);
-                        });
-                };
-
-                const onScanError = (_err: any) => {
-                    // 콘솔에만 찍고 UI는 조용히 유지
-                    // console.warn(_err);
-                };
-
-                scannerRef.current.render(onScanSuccess, onScanError);
             } catch (e) {
+                setError("카메라를 사용할 수 없습니다. 권한을 허용해주세요.");
                 console.error(e);
-                if (!isCancelled) {
-                    setError("QR 스캐너를 초기화할 수 없습니다.");
-                }
-            }
-        };
-
-        const handleDecoded = (value: string) => {
-            try {
-                let activityId: string | null = null;
-
-                if (value.startsWith("http://") || value.startsWith("https://")) {
-                    const url = new URL(value);
-                    activityId = url.searchParams.get("activity");
-                } else {
-                    // 혹시 QR에 activity id만 들어간 형태라면
-                    activityId = value;
-                }
-
-                if (!activityId) {
-                    setError("QR 코드 형식이 올바르지 않습니다.");
-                    scannedRef.current = false;
-                    return;
-                }
-
-                router.push(`/user/pay?activity=${activityId}`);
-            } catch (e) {
-                console.error(e);
-                setError("QR 코드 해석 중 오류가 발생했습니다.");
-                scannedRef.current = false;
             }
         };
 
         startScanner();
 
         return () => {
-            isCancelled = true;
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(() => {});
+            if (qrRef.current) {
+                qrRef.current.stop().catch(() => {});
             }
         };
-    }, [router]);
+    }, []);
 
     return (
-        <main className="min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md space-y-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-bold">QR 스캔해서 결제하기</h1>
-                    <Link
-                        href="/user"
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        ← 내 정보로 돌아가기
-                    </Link>
-                </div>
+        <main className="min-h-screen px-4 py-6 space-y-6">
+            <h1 className="text-2xl font-bold">QR 스캔하여 결제하기</h1>
 
-                <p className="text-sm text-gray-600">
-                    부스에서 보여주는 QR 코드를 사각형 안에 맞춰주세요. 인식되면 자동으로
-                    결제 화면으로 이동합니다.
-                </p>
+            {error && <p className="text-red-600">{error}</p>}
 
-                {error && (
-                    <p className="text-sm text-red-600 border border-red-200 rounded-md p-2">
-                        {error}
-                    </p>
-                )}
+            <div
+                id="qr-reader"
+                className="w-full max-w-sm mx-auto border rounded-lg overflow-hidden"
+                style={{ minHeight: 300 }}
+            />
 
-                <div
-                    id="qr-reader"
-                    className="w-full aspect-square rounded-xl border bg-black overflow-hidden"
-                />
-            </div>
+            <Link
+                href="/user"
+                className="inline-block mt-4 px-4 py-2 border rounded-md hover:bg-gray-100"
+            >
+                ← 내 정보로 돌아가기
+            </Link>
         </main>
     );
 }
