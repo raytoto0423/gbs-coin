@@ -134,7 +134,7 @@ export default async function UserPage() {
 
             {/* 최근 거래 내역 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3 text-gray-900">
+                <h2 className="text-lg font-semibold mb-3 text-gray-50">
                     최근 거래 내역
                 </h2>
 

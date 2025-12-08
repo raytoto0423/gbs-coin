@@ -324,11 +324,11 @@ export default function AdminDashboard({
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-3 py-2 w-10 text-center">선택</th>
-                            <th className="px-3 py-2 text-left">이름</th>
-                            <th className="px-3 py-2 text-left">이메일</th>
-                            <th className="px-3 py-2 text-left">역할</th>
-                            <th className="px-3 py-2 text-right">잔액</th>
+                            <th className="px-3 py-2 w-10 text-center text-gray-900">선택</th>
+                            <th className="px-3 py-2 text-left text-gray-900">이름</th>
+                            <th className="px-3 py-2 text-left text-gray-900">이메일</th>
+                            <th className="px-3 py-2 text-left text-gray-900">역할</th>
+                            <th className="px-3 py-2 text-right text-gray-900">잔액</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -351,12 +351,12 @@ export default function AdminDashboard({
                                             onChange={() => toggleUserSelect(u.id)}
                                         />
                                     </td>
-                                    <td className="px-3 py-2">{u.name}</td>
-                                    <td className="px-3 py-2">{u.email}</td>
-                                    <td className="px-3 py-2 text-xs text-gray-600">
+                                    <td className="px-3 py-2 text-gray-900">{u.name}</td>
+                                    <td className="px-3 py-2 text-gray-900">{u.email}</td>
+                                    <td className="px-3 py-2 text-xs text-gray-900">
                                         {u.role}
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono">
+                                    <td className="px-3 py-2 text-right font-mono text-gray-900">
                                         {u.balance.toLocaleString()} C
                                     </td>
                                 </tr>
