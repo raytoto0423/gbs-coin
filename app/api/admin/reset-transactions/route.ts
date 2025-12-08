@@ -1,4 +1,7 @@
 // app/api/admin/reset-transactions/route.ts
+export const runtime = "nodejs";          // ✅ Prisma는 Node 런타임에서만
+export const dynamic = "force-dynamic";   // ✅ 항상 동적 처리
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
