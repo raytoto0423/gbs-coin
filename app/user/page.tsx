@@ -114,6 +114,14 @@ export default async function UserPage() {
                         >
                             QR 스캔하여 결제하기
                         </Link>
+
+                        <Link
+                            href="/ranking"
+                            className="inline-block px-3 py-1 border border-gray-300 rounded-md text-xs text-gray-900 hover:bg-gray-100 bg-white"
+                        >
+                            반 부스 코인 순위 보기
+                        </Link>
+
                     </div>
                 </div>
             </section>

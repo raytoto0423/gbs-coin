@@ -3,13 +3,14 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import LogoutButton from "@/components/LogoutButton";
 import AdminDashboard from "./AdminDashboard";
+import Link from "next/link";
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
 export default async function AdminPage() {
     const session = await auth();
 
-    // 🔐 관리자 이메일이 아니면 바로 차단 (DB 조회도 안 함)
+    // 🔐 관리자 이메일이 아니면 바로 차단
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return (
             <main className="min-h-screen flex items-center justify-center px-4">
@@ -25,29 +26,66 @@ export default async function AdminPage() {
         );
     }
 
-    const [users, booths] = await Promise.all([
+    const [users, booths, txRaw] = await Promise.all([
         prisma.user.findMany({
+            where: {
+                NOT: { email: ADMIN_EMAIL }, // 🔥 관리자 계정은 목록에서 제외
+            },
             orderBy: { createdAt: "asc" },
         }),
         prisma.booth.findMany({
             orderBy: { id: "asc" },
         }),
+        prisma.transaction.findMany({
+            orderBy: { createdAt: "desc" },
+            take: 50, // 최근 50개만
+            include: {
+                fromUser: true,
+                toUser: true,
+                fromBooth: true,
+                toBooth: true,
+            },
+        }),
     ]);
+
+    const transactions = txRaw.map((t) => ({
+        id: t.id,
+        title: t.title ?? "",
+        amount: t.amount,
+        createdAt: t.createdAt.toISOString(),
+        fromUserName: t.fromUser?.name ?? null,
+        fromUserEmail: t.fromUser?.email ?? null,
+        toUserName: t.toUser?.name ?? null,
+        toUserEmail: t.toUser?.email ?? null,
+        fromBoothId: t.fromBoothId,
+        fromBoothName: t.fromBooth?.name ?? null,
+        toBoothId: t.toBoothId,
+        toBoothName: t.toBooth?.name ?? null,
+    }));
 
     return (
         <main className="min-h-screen flex justify-center px-4 py-8">
-            <div className="w-full max-w-4xl space-y-6">
+            <div className="w-full max-w-5xl space-y-6">
                 {/* 상단 헤더 + 로그아웃 */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-50">
+                        <h1 className="text-2xl font-bold text-gray-900">
                             관리자 대시보드
                         </h1>
                         <p className="text-sm text-gray-600">
                             {session.user.email} 계정으로 접속 중
                         </p>
                     </div>
-                    <LogoutButton />
+
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/ranking"
+                            className="px-3 py-1.5 rounded-md border border-gray-300 text-sm text-gray-900 bg-white hover:bg-gray-100"
+                        >
+                            반 부스 코인 순위
+                        </Link>
+                        <LogoutButton />
+                    </div>
                 </div>
 
                 <AdminDashboard
@@ -63,6 +101,7 @@ export default async function AdminPage() {
                         name: b.name,
                         balance: b.balance,
                     }))}
+                    transactions={transactions}
                 />
             </div>
         </main>

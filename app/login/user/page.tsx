@@ -40,7 +40,7 @@ export default function UserLoginPage() {
                     </p>
                     <Link
                         href="/login/booth"
-                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-150"
+                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-150 text-gray-900"
                     >
                         부스 로그인 페이지로 이동
                     </Link>
