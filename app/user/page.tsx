@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 
-    const ADMIN_EMAIL = "dhhwang423@gmail.com"; // 🔥 관리자 이메일 상수
+const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
 export default async function UserPage() {
     const session = await auth();
@@ -12,16 +12,37 @@ export default async function UserPage() {
     if (!session?.user) {
         return (
             <main className="min-h-screen flex items-center justify-center">
-                <p>로그인 후 이용할 수 있습니다.</p>
+                <p className="text-gray-900">로그인 후 이용할 수 있습니다.</p>
             </main>
         );
     }
 
     const userId = session.user.id;
+    const email = session.user.email ?? "";
+    const name = session.user.name ?? "";
 
-    const [user, transactions] = await Promise.all([
-        prisma.user.findUnique({
-            where: { id: userId },
+    // 🔥 1) 유저 조회
+    let user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            name: true,
+            balance: true,
+            role: true,
+            email: true,
+        },
+    });
+
+    // 🔥 2) 없으면 자동 생성 (최초 접속 시)
+    if (!user) {
+        user = await prisma.user.create({
+            data: {
+                id: userId,
+                email,
+                name,
+                role: email === ADMIN_EMAIL ? "ADMIN" : "STUDENT",
+                balance: 0,
+            },
             select: {
                 id: true,
                 name: true,
@@ -29,32 +50,25 @@ export default async function UserPage() {
                 role: true,
                 email: true,
             },
-        }),
-        prisma.transaction.findMany({
-            where: {
-                OR: [{ fromUserId: userId }, { toUserId: userId }],
-            },
-            orderBy: { createdAt: "desc" },
-            take: 10,
-            include: {
-                fromUser: true,
-                toUser: true,
-                toBooth: true,
-            },
-        }),
-    ]);
-
-    if (!user) {
-        return (
-            <main className="min-h-screen flex items-center justify-center">
-                <p>유저 정보를 찾을 수 없습니다.</p>
-            </main>
-        );
+        });
     }
+
+    const transactions = await prisma.transaction.findMany({
+        where: {
+            OR: [{ fromUserId: user.id }, { toUserId: user.id }],
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: {
+            fromUser: true,
+            toUser: true,
+            toBooth: true,
+        },
+    });
 
     const isAdminAccount = user.email === ADMIN_EMAIL;
 
-    // 🔐 관리자 계정은 이 페이지에서 지갑 기능 사용 불가
+    // 🔐 관리자 계정은 여기서 지갑 기능 사용 불가
     if (isAdminAccount) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4">
@@ -85,10 +99,10 @@ export default async function UserPage() {
             {/* 헤더 */}
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-50">
+                    <h1 className="text-2xl font-bold text-gray-900">
                         {user.name}님 환영합니다.
                     </h1>
-                    <p className="text-gray-600 text-sm">{user.email}</p>
+                    <p className="text-gray-700 text-sm">{user.email}</p>
                 </div>
 
                 {/* 상단 오른쪽 로그아웃 버튼 */}
@@ -114,32 +128,24 @@ export default async function UserPage() {
                         >
                             QR 스캔하여 결제하기
                         </Link>
-
-                        <Link
-                            href="/ranking"
-                            className="inline-block px-3 py-1 border border-gray-300 rounded-md text-xs text-gray-900 hover:bg-gray-100 bg-white"
-                        >
-                            반 부스 코인 순위 보기
-                        </Link>
-
                     </div>
                 </div>
             </section>
 
             {/* 최근 거래 내역 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3 text-gray-50">
+                <h2 className="text-lg font-semibold mb-3 text-gray-900">
                     최근 거래 내역
                 </h2>
 
                 {transactions.length === 0 ? (
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-600 text-sm">
                         최근 거래 내역이 없습니다.
                     </p>
                 ) : (
                     <div className="space-y-3">
                         {transactions.map((t) => {
-                            const isIncoming = t.toUserId === userId; // 내가 받은 돈?
+                            const isIncoming = t.toUserId === user.id; // 내가 받은 돈?
                             const amountSigned = isIncoming ? t.amount : -t.amount;
                             const amountText =
                                 (amountSigned > 0 ? "+" : "") + amountSigned + " C";
@@ -151,7 +157,7 @@ export default async function UserPage() {
                                     key={t.id}
                                     className="p-3 border rounded-md bg-white shadow-sm"
                                 >
-                                    <p className="text-sm font-medium">
+                                    <p className="text-sm font-medium text-gray-900">
                                         {t.title ?? "거래"}
                                     </p>
                                     <p className="text-xs text-gray-500">

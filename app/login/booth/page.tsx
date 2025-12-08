@@ -42,7 +42,7 @@ export default function BoothLoginPage() {
                         <input
                             value={boothId}
                             onChange={(e) => setBoothId(e.target.value)}
-                            className="w-full border rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+                            className="w-full border rounded-md px-3 py-2 text-sm bg-white text-gray-900"
                             required
                         />
                     </div>
@@ -56,7 +56,7 @@ export default function BoothLoginPage() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full border rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+                            className="w-full border rounded-md px-3 py-2 text-sm bg-white text-gray-900"
                             required
                         />
                     </div>
@@ -77,7 +77,7 @@ export default function BoothLoginPage() {
                     </p>
                     <Link
                         href="/login/user"
-                        className="block w-full py-2 rounded-md border text-center text-sm hover:bg-gray-100 text-gray-900"
+                        className="block w-full py-2 rounded-md border text-center text-sm bg-white text-gray-900 hover:bg-gray-100"
                     >
                         학생/선생님 로그인 페이지로 이동
                     </Link>

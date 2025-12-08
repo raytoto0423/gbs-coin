@@ -72,7 +72,7 @@ export default async function AdminPage() {
                         <h1 className="text-2xl font-bold text-gray-900">
                             관리자 대시보드
                         </h1>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-700">
                             {session.user.email} 계정으로 접속 중
                         </p>
                     </div>
@@ -80,7 +80,7 @@ export default async function AdminPage() {
                     <div className="flex items-center gap-3">
                         <Link
                             href="/ranking"
-                            className="px-3 py-1.5 rounded-md border border-gray-300 text-sm text-gray-900 bg-white hover:bg-gray-100"
+                            className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-900 hover:bg-gray-100"
                         >
                             반 부스 코인 순위
                         </Link>

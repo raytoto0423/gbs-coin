@@ -45,6 +45,8 @@ export default function AdminDashboard({
                                        }: AdminDashboardProps) {
     const [userList, setUserList] = useState<AdminUser[]>(users);
     const [boothList, setBoothList] = useState<AdminBooth[]>(booths);
+    const [txList, setTxList] = useState<AdminTransaction[]>(transactions);
+
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [userAmount, setUserAmount] = useState<string>("");
 
@@ -185,6 +187,34 @@ export default function AdminDashboard({
 
             setMessage("모든 부스의 잔액이 0으로 초기화되었습니다.");
             setBoothList((prev) => prev.map((b) => ({ ...b, balance: 0 })));
+        } catch (e) {
+            console.error(e);
+            setError("요청 처리 중 오류가 발생했습니다.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleResetTransactions = async () => {
+        if (!confirm("정말 모든 거래 내역을 삭제할까요?")) return;
+
+        setError(null);
+        setMessage(null);
+        setBusy(true);
+
+        try {
+            const res = await fetch("/api/admin/reset-transactions", {
+                method: "POST",
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                setError(data.error ?? "거래 내역 삭제에 실패했습니다.");
+                return;
+            }
+
+            setMessage("모든 거래 내역이 삭제되었습니다.");
+            setTxList([]);
         } catch (e) {
             console.error(e);
             setError("요청 처리 중 오류가 발생했습니다.");
@@ -388,19 +418,29 @@ export default function AdminDashboard({
                 </div>
             </section>
 
-            {/* 전체 결제 내역 */}
+            {/* 전체 결제 / 거래 내역 */}
             <section className="p-4 border rounded-lg shadow-sm bg-white space-y-3">
-                <h2 className="text-lg font-semibold text-gray-900">
-                    전체 결제 / 거래 내역 (최근 50개)
-                </h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        전체 결제 / 거래 내역 (최근 50개)
+                    </h2>
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={handleResetTransactions}
+                        className="px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-60"
+                    >
+                        거래 내역 전체 삭제
+                    </button>
+                </div>
 
-                {transactions.length === 0 ? (
+                {txList.length === 0 ? (
                     <p className="text-sm text-gray-500">
                         아직 거래 내역이 없습니다.
                     </p>
                 ) : (
                     <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                        {transactions.map((t) => {
+                        {txList.map((t) => {
                             const dateStr = new Date(t.createdAt).toLocaleString("ko-KR", {
                                 timeZone: "Asia/Seoul",
                             });
