@@ -387,9 +387,9 @@ export default function AdminDashboard({
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-3 py-2 text-left">부스 ID</th>
-                            <th className="px-3 py-2 text-left">반 이름</th>
-                            <th className="px-3 py-2 text-right">잔액</th>
+                            <th className="px-3 py-2 text-left text-gray-900">부스 ID</th>
+                            <th className="px-3 py-2 text-left text-gray-900">반 이름</th>
+                            <th className="px-3 py-2 text-right text-gray-900">잔액</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -405,9 +405,9 @@ export default function AdminDashboard({
                         ) : (
                             boothList.map((b) => (
                                 <tr key={b.id} className="border-t">
-                                    <td className="px-3 py-2 font-mono">{b.id}</td>
-                                    <td className="px-3 py-2">{b.name}</td>
-                                    <td className="px-3 py-2 text-right font-mono">
+                                    <td className="px-3 py-2 font-mono text-gray-900">{b.id}</td>
+                                    <td className="px-3 py-2 text-gray-900">{b.name}</td>
+                                    <td className="px-3 py-2 text-right font-mono text-gray-900">
                                         {b.balance.toLocaleString()} C
                                     </td>
                                 </tr>

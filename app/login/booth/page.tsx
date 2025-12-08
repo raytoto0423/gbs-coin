@@ -77,7 +77,7 @@ export default function BoothLoginPage() {
                     </p>
                     <Link
                         href="/login/user"
-                        className="block w-full py-2 rounded-md border text-center text-sm bg-white text-gray-900 hover:bg-gray-100"
+                        className="block w-full py-2 rounded-md border text-center text-sm bg-red-700 text-gray-900 hover:bg-gray-100"
                     >
                         학생/선생님 로그인 페이지로 이동
                     </Link>

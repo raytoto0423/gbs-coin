@@ -96,7 +96,7 @@ export default function BoothDashboard({
             {/* 상단 헤더 + 순위 버튼 + 로그아웃 */}
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-900">부스 대시보드</h1>
+                    <h1 className="text-2xl font-bold text-gray-50">부스 대시보드</h1>
                     <p className="text-sm text-gray-600">
                         부스 ID: <span className="font-mono">{boothId}</span>
                     </p>
@@ -178,7 +178,7 @@ export default function BoothDashboard({
                         {activities.map((a) => (
                             <li
                                 key={a.id}
-                                className="flex items-center justify-between border rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900"
+                                className="flex items-center justify-between border rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-50"
                             >
                                 <div>
                                     <div className="font-medium text-gray-900">{a.title}</div>
