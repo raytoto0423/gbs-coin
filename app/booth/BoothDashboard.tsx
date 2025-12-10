@@ -96,7 +96,7 @@ export default function BoothDashboard({
             {/* 상단 헤더 + 순위 버튼 + 로그아웃 */}
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-50 drop-shadow-custom">부스 대시보드</h1>
+                    <h1 className="text-2xl font-bold text-gray-50 text-stroke-gray-900">부스 대시보드</h1>
                     <p className="text-sm text-gray-600">
                         부스 ID: <span className="font-mono">{boothId}</span>
                     </p>
