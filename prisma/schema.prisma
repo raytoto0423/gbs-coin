@@ -97,11 +97,14 @@ model Inquiry {
   id        String   @id @default(cuid())
   sender    User     @relation(fields: [senderId], references: [id])
   senderId  String
+
   message   String
   createdAt DateTime @default(now())
 
-  // 🔽 관리자 답변 관련 필드들 (선택사항)
   replyMessage  String?
   repliedAt     DateTime?
   repliedByEmail String?
+
+  // ✅ 관리자 페이지에서만 숨길 때 사용하는 플래그
+  archivedByAdmin Boolean @default(false)
 }

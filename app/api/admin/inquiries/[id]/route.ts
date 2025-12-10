@@ -5,21 +5,16 @@ import { auth } from "@/auth";
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
-/** URL or params 에서 id를 안전하게 뽑아오는 헬퍼 */
+// URL/params 에서 id 뽑기
 function extractInquiryId(req: NextRequest, params?: { id?: string }) {
     if (params?.id) return params.id;
-
-    // /api/admin/inquiries/abc123 형태에서 마지막 조각을 ID로 사용
     const url = new URL(req.url);
     const segments = url.pathname.split("/").filter(Boolean);
     const last = segments[segments.length - 1];
     return last || null;
 }
 
-/**
- * 문의에 대한 관리자 답변 저장
- * POST /api/admin/inquiries/[id]
- */
+/** ✅ 문의 답변 저장 */
 export async function POST(
     req: NextRequest,
     context: { params: { id?: string } }
@@ -70,10 +65,7 @@ export async function POST(
     }
 }
 
-/**
- * 문의 삭제
- * DELETE /api/admin/inquiries/[id]
- */
+/** ✅ 관리자 목록에서만 숨기기 (soft delete) */
 export async function DELETE(
     req: NextRequest,
     context: { params: { id?: string } }
@@ -95,8 +87,10 @@ export async function DELETE(
             );
         }
 
-        await prisma.inquiry.delete({
+        // ❌ 실제 삭제 대신, 관리자 목록에서만 숨김
+        await prisma.inquiry.update({
             where: { id: inquiryId },
+            data: { archivedByAdmin: true },
         });
 
         return NextResponse.json({ ok: true });
