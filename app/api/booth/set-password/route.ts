@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
     const { user } = session;
 
-    // 학생 회장만 허용 (필요하면 TEACHER도 허용 가능)
+    // 🔐 학생 회장만 허용 (필요하면 TEACHER도 열어줄 수 있음)
     if (user.role !== "STUDENT") {
         return NextResponse.json(
             { message: "학생 계정만 사용할 수 있습니다." },
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     if (!grade || !classRoom) {
         return NextResponse.json(
-            { message: "학급 정보가 없습니다." },
+            { message: "학급 정보가 없습니다. 관리자에게 문의해 주세요." },
             { status: 400 }
         );
     }
@@ -49,14 +49,14 @@ export async function POST(req: Request) {
 
     if (!newPassword) {
         return NextResponse.json(
-            { message: "새 비밀번호를 입력해주세요." },
+            { message: "새 비밀번호를 입력해 주세요." },
             { status: 400 }
         );
     }
 
     if (newPassword.length < 4 || newPassword.length > 20) {
         return NextResponse.json(
-            { message: "비밀번호는 4~20자 사이여야 합니다." },
+            { message: "비밀번호는 4자 이상 20자 이하여야 합니다." },
             { status: 400 }
         );
     }
@@ -69,7 +69,9 @@ export async function POST(req: Request) {
 
     if (!booth) {
         return NextResponse.json(
-            { message: `${grade}학년 ${classRoom}반 부스를 찾을 수 없습니다.` },
+            {
+                message: `${grade}학년 ${classRoom}반 부스를 찾을 수 없습니다. 관리자에게 문의해 주세요.`,
+            },
             { status: 404 }
         );
     }
