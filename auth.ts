@@ -1,18 +1,9 @@
-// auth.ts (프로젝트 루트 기준)
+// auth.ts
 
-// NextAuth v5 스타일
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "./lib/prisma";
-
-// auth.ts (일부)
-
-// NextAuth v5 스타일
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
-import { prisma } from "./lib/prisma";
+import { prisma } from "@/lib/prisma"; // ✅ prisma import는 이 한 줄만!
 
 const SCHOOL_EMAIL_REGEX =
     /^gbs\.(s|t)(\d{2})(\d{4})@ggh\.goe\.go\.kr$/i;
@@ -53,7 +44,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-            checks: ["none"], // pkce 에러 막으려고 쓰던 설정 유지
+            checks: ["none"], // pkce 에러 피하려고 쓰던 설정
         }),
 
         // 2) 부스 로그인 (부스 ID + 비밀번호)
@@ -112,7 +103,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
         }),
 
-        // 3) 개발용 계정 (원래 쓰던 거 그대로)
+        // 3) 개발용 계정 (필요하면 유지)
         Credentials({
             id: "dev-user",
             name: "Dev User Login",
@@ -166,7 +157,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
 
     callbacks: {
-        // ✅ 구글 로그인 시 DB upsert (학년/반/역할은 seed 데이터 사용)
+        // ✅ 구글 로그인 시 DB upsert
         async signIn({ user, account }) {
             if (account?.provider === "google") {
                 const email = user.email ?? "";
@@ -195,7 +186,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 const kind = match[1].toLowerCase(); // s/t
                 const role = kind === "s" ? "STUDENT" : "TEACHER";
 
-                // 📌 grade / classRoom / classRole 은 이미 seed 에 들어있다고 가정 → 여기선 role 위주로만 업데이트
                 await prisma.user.upsert({
                     where: { email },
                     update: {
@@ -230,7 +220,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                         t.role = dbUser.role;
                         t.boothId = null;
 
-                        // 🔥 학년/반/학급 역할도 토큰에 저장
                         t.grade = dbUser.grade ?? null;
                         t.classRoom = dbUser.classRoom ?? null;
                         t.classRole = dbUser.classRole ?? null;
@@ -249,7 +238,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             return t;
         },
 
-        // ✅ 세션에 우리가 쓸 user 정보 세팅
+        // ✅ 세션에 user 정보 세팅
         async session({ session, token }) {
             const t: any = token;
 
@@ -260,7 +249,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 session.user.role = t.role ?? "";
                 session.user.boothId = t.boothId ?? null;
 
-                // 🔥 학년/반/학급 역할 세션에 넣기
                 session.user.grade = t.grade ?? null;
                 session.user.classRoom = t.classRoom ?? null;
                 session.user.classRole = t.classRole ?? null;
@@ -272,4 +260,3 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
 });
-
