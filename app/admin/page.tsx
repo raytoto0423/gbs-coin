@@ -32,14 +32,38 @@ export default async function AdminPage() {
         );
     }
 
-    const [userCount, boothCount, txCount, booths, transactions] =
+    const [users, userCount, boothCount, txCount, booths, transactions] =
         await Promise.all([
-            // 🔢 등록된 유저 수 (관리자 + 부스 계정 제외)
+            // ✅ 유저 전체 목록 (관리자 + 부스 계정 제외)
+            prisma.user.findMany({
+                where: {
+                    AND: [
+                        { email: { not: ADMIN_EMAIL } },
+                        { email: { not: { endsWith: "@booth.local" } } },
+                    ],
+                },
+                orderBy: [
+                    { grade: "asc" },
+                    { classRoom: "asc" },
+                    { name: "asc" },
+                ],
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    grade: true,
+                    classRoom: true,
+                    classRole: true,
+                    balance: true,
+                },
+            }),
+            // ✅ 등록된 유저 수 (관리자 + 부스 계정 제외)
             prisma.user.count({
                 where: {
                     AND: [
-                        { email: { not: ADMIN_EMAIL } }, // 관리자 제외
-                        { email: { not: { endsWith: "@booth.local" } } }, // 부스 계정 제외
+                        { email: { not: ADMIN_EMAIL } },
+                        { email: { not: { endsWith: "@booth.local" } } },
                     ],
                 },
             }),
@@ -153,8 +177,72 @@ export default async function AdminPage() {
                 {/* 관리자 액션 (잔액 초기화 / 부스 잔액 조정 / 거래 초기화) */}
                 <AdminActions />
 
-                {/* 유저 잔액 검색/일괄 조정 (전체 목록은 제거, 검색 기반만 유지) */}
+                {/* 유저 잔액 관리 - 검색/선택/일괄 적용 */}
                 <AdminUserActions />
+
+                {/* 🔥 유저 잔액 관리 (전체 목록, 보기용) */}
+                <section>
+                    <h2 className="text-lg font-semibold mb-3">
+                        유저 잔액 관리 (전체 목록)
+                    </h2>
+                    <p className="text-xs text-slate-400 mb-2">
+                        관리자 계정과 부스 계정(@booth.local)은 목록에서 제외됩니다.
+                    </p>
+                    <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/60 max-h-[420px]">
+                        <table className="min-w-full text-xs">
+                            <thead className="sticky top-0 z-10 bg-slate-800/90">
+                            <tr>
+                                <th className="px-3 py-2 text-left">이름</th>
+                                <th className="px-3 py-2 text-left">이메일</th>
+                                <th className="px-3 py-2 text-center">학년</th>
+                                <th className="px-3 py-2 text-center">반</th>
+                                <th className="px-3 py-2 text-center">역할</th>
+                                <th className="px-3 py-2 text-right">잔액 (C)</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {users.map((u) => (
+                                <tr key={u.id} className="border-t border-slate-800">
+                                    <td className="px-3 py-1.5">
+                                        {u.name}
+                                        {u.classRole === "회장" && (
+                                            <span className="ml-1 text-[10px] text-amber-300">
+                          (회장)
+                        </span>
+                                        )}
+                                        {u.classRole === "부회장" && (
+                                            <span className="ml-1 text-[10px] text-sky-300">
+                          (부회장)
+                        </span>
+                                        )}
+                                    </td>
+                                    <td className="px-3 py-1.5">{u.email}</td>
+                                    <td className="px-3 py-1.5 text-center">
+                                        {u.grade ?? "-"}
+                                    </td>
+                                    <td className="px-3 py-1.5 text-center">
+                                        {u.classRoom ?? "-"}
+                                    </td>
+                                    <td className="px-3 py-1.5 text-center">{u.role}</td>
+                                    <td className="px-3 py-1.5 text-right">
+                                        {u.balance.toLocaleString()}
+                                    </td>
+                                </tr>
+                            ))}
+                            {users.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={6}
+                                        className="px-3 py-4 text-center text-slate-500"
+                                    >
+                                        표시할 유저가 없습니다.
+                                    </td>
+                                </tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
 
                 {/* 부스 목록 + 비밀번호 */}
                 <section>
@@ -197,7 +285,7 @@ export default async function AdminPage() {
                     </div>
                 </section>
 
-                {/* 🔥 전체 거래 내역 (최근 200건) */}
+                {/* 전체 거래 내역 (최근 200건) */}
                 <section>
                     <h2 className="text-lg font-semibold mb-3">
                         전체 거래 내역 (최근 200건)

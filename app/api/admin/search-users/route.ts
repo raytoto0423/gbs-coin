@@ -2,13 +2,13 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     const session = await auth();
 
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
@@ -18,43 +18,42 @@ export async function GET(req: Request) {
         );
     }
 
-    const url = new URL(req.url);
-    const q = (url.searchParams.get("q") || "").trim();
+    const { searchParams } = new URL(req.url);
+    const q = searchParams.get("q")?.trim() ?? "";
 
     if (!q) {
-        return NextResponse.json(
-            { message: "검색어(q)가 필요합니다." },
-            { status: 400 }
-        );
+        return NextResponse.json({ users: [] });
     }
 
     const users = await prisma.user.findMany({
         where: {
             AND: [
-                { email: { not: ADMIN_EMAIL } },
-                { role: { endsWith: "@booth.local" } },
+                { email: { not: ADMIN_EMAIL } }, // 관리자 제외
+                { email: { not: { endsWith: "@booth.local" } } }, // 부스 계정 제외
+                {
+                    OR: [
+                        { name: { contains: q } },
+                        { email: { contains: q } },
+                    ],
+                },
             ],
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            grade: true,
+            classRoom: true,
+            classRole: true,
+            balance: true,
         },
         orderBy: [
             { grade: "asc" },
             { classRoom: "asc" },
             { name: "asc" },
         ],
-        take: 50, // 너무 많이 나오지 않게 제한
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            grade: true,
-            classRoom: true,
-            classRole: true,
-            role: true,
-            balance: true,
-        },
     });
 
-    return NextResponse.json({
-        ok: true,
-        users,
-    });
+    return NextResponse.json({ users });
 }
