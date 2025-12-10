@@ -7,15 +7,20 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// ⚠️ enum 삭제하고, 아래 모델들에서 role/type을 String으로 사용
-
+// User = 학생/선생/관리자 계정
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  role      String              // "STUDENT" | "TEACHER" | "ADMIN" 같은 문자열로 사용
-  balance   Int      @default(0)
-  classId   String?
+  id      String @id @default(cuid())
+  email   String @unique
+  name    String
+  role    String
+
+  balance Int    @default(0)
+  classId String?
+
+  grade     Int?
+  classRoom Int?
+  number    Int?
+  classRole String?
 
   transactionsSent     Transaction[] @relation("UserFrom")
   transactionsReceived Transaction[] @relation("UserTo")
@@ -24,13 +29,18 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+// Booth = 부스 계정 (학급 부스/행사 부스 등)
 model Booth {
-  id           String   @id         // 예: "1-1", "2-3"
+  id           String @id    // 예: "1-1", "2-3" 같은 형태
   name         String
-  passwordHash String               // 반장 폰 뒤 4자리 해시
-  balance      Int      @default(0)
+  passwordHash String        // 부스 비밀번호 해시
+  balance      Int    @default(0)
 
-  activities          Activity[]
+  // 🔥 새로 추가한 부스 학급 정보
+  grade     Int?             // 이 부스가 담당하는 학년 (학급 부스일 경우)
+  classRoom Int?             // 이 부스가 담당하는 반
+
+  activities           Activity[]
   transactionsSent     Transaction[] @relation("BoothFrom")
   transactionsReceived Transaction[] @relation("BoothTo")
 
@@ -39,15 +49,15 @@ model Booth {
 }
 
 model Activity {
-  id        String   @id @default(cuid())
-  booth     Booth    @relation(fields: [boothId], references: [id])
-  boothId   String
+  id      String @id @default(cuid())
+  booth   Booth  @relation(fields: [boothId], references: [id])
+  boothId String
 
-  title     String
-  price     Int
-  type      String             // "PAY" | "REWARD"를 문자열로 저장
+  title String
+  price Int
+  type  String             // "PAY" | "REWARD"를 문자열로 저장
 
-  isActive  Boolean  @default(true)
+  isActive Boolean @default(true)
 
   transactions Transaction[]
 
@@ -56,25 +66,25 @@ model Activity {
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  fromUser    User?    @relation("UserFrom", fields: [fromUserId], references: [id])
-  fromUserId  String?
+  fromUser   User?  @relation("UserFrom", fields: [fromUserId], references: [id])
+  fromUserId String?
 
-  toUser      User?    @relation("UserTo", fields: [toUserId], references: [id])
-  toUserId    String?
+  toUser   User?  @relation("UserTo", fields: [toUserId], references: [id])
+  toUserId String?
 
-  fromBooth   Booth?   @relation("BoothFrom", fields: [fromBoothId], references: [id])
+  fromBooth   Booth?  @relation("BoothFrom", fields: [fromBoothId], references: [id])
   fromBoothId String?
 
-  toBooth     Booth?   @relation("BoothTo", fields: [toBoothId], references: [id])
-  toBoothId   String?
+  toBooth   Booth?  @relation("BoothTo", fields: [toBoothId], references: [id])
+  toBoothId String?
 
-  amount      Int
-  title       String
+  amount Int
+  title  String
 
-  activity    Activity? @relation(fields: [activityId], references: [id])
-  activityId  String?
+  activity   Activity? @relation(fields: [activityId], references: [id])
+  activityId String?
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
