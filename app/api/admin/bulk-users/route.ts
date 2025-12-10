@@ -1,8 +1,5 @@
 // app/api/admin/bulk-users/route.ts
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -10,9 +7,8 @@ const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
 type BulkMode = "SET" | "ADD" | "CLEAR";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const session = await auth();
-
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return NextResponse.json(
             { error: "관리자만 사용할 수 있습니다." },
@@ -20,12 +16,8 @@ export async function POST(req: Request) {
         );
     }
 
-    const body = (await req.json().catch(() => null)) as
-        | {
-        userIds?: string[];
-        mode?: BulkMode;
-        amount?: number;
-    }
+    const body = await req.json().catch(() => null) as
+        | { userIds?: string[]; mode?: BulkMode; amount?: number }
         | null;
 
     if (!body?.userIds || body.userIds.length === 0 || !body.mode) {
@@ -44,11 +36,14 @@ export async function POST(req: Request) {
         );
     }
 
-    // 관리자 계정은 실수로 포함돼도 건드리지 않도록 필터
+    // 관리자 / 부스 계정은 항상 제외
     const targets = await prisma.user.findMany({
         where: {
             id: { in: userIds },
-            NOT: { email: ADMIN_EMAIL },
+            NOT: [
+                { email: ADMIN_EMAIL },
+                { role: "BOOTH" },
+            ],
         },
     });
 
@@ -95,13 +90,13 @@ export async function POST(req: Request) {
             email: true,
             grade: true,
             classRoom: true,
-            classRole: true,
             balance: true,
         },
     });
 
     return NextResponse.json({
         ok: true,
+        count: updatedUsers.length,
         users: updatedUsers,
     });
 }

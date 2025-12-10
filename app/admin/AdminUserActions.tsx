@@ -1,344 +1,453 @@
-// app/admin/AdminUserActions.tsx
 "use client";
 
 import { useState } from "react";
 
-type BulkMode = "SET" | "ADD" | "CLEAR";
-
-type UserLite = {
+type UserItem = {
     id: string;
     name: string;
     email: string;
-    role: string;
     grade: number | null;
     classRoom: number | null;
-    classRole: string | null;
     balance: number;
 };
 
+type BulkMode = "SET" | "ADD" | "CLEAR";
+
 export default function AdminUserActions() {
     const [query, setQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<UserLite[]>([]);
-    const [selected, setSelected] = useState<Record<string, UserLite>>({});
-    const [loading, setLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState<UserItem[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<UserItem[]>([]);
     const [mode, setMode] = useState<BulkMode>("ADD");
-    const [amount, setAmount] = useState<number | "">("");
-    const [msg, setMsg] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [amount, setAmount] = useState<number>(0);
+    const [gradeForBulk, setGradeForBulk] = useState<number>(1);
+    const [gradeForClass, setGradeForClass] = useState<number>(1);
+    const [classForBulk, setClassForBulk] = useState<number>(1);
+    const [isApplying, setIsApplying] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [isSelecting, setIsSelecting] = useState(false);
 
-    const selectedList = Object.values(selected);
-
-    const onSearch = async () => {
-        setLoading(true);
-        setMsg(null);
-        setError(null);
-        try {
-            const res = await fetch(
-                `/api/admin/search-users?q=${encodeURIComponent(query)}`,
-                {
-                    method: "GET",
-                }
-            );
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || "검색 요청 실패");
-            }
-            const data = (await res.json()) as { users: UserLite[] };
-            setSearchResults(data.users || []);
-        } catch (e: any) {
-            setError(e.message || "검색 중 오류가 발생했습니다.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const toggleSelect = (user: UserLite) => {
-        setSelected((prev) => {
-            const copy = { ...prev };
-            if (copy[user.id]) {
-                delete copy[user.id];
-            } else {
-                copy[user.id] = user;
-            }
-            return copy;
+    // 중복 없이 users 추가
+    const mergeSelected = (users: UserItem[]) => {
+        setSelectedUsers((prev) => {
+            const map = new Map<string, UserItem>();
+            [...prev, ...users].forEach((u) => map.set(u.id, u));
+            return Array.from(map.values());
         });
     };
 
-    const clearSelected = () => {
-        setSelected({});
+    const handleSearch = async () => {
+        const q = query.trim();
+        if (!q) {
+            setSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const res = await fetch("/api/admin/search-users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: q }),
+            });
+
+            if (!res.ok) {
+                alert("검색 중 오류가 발생했습니다.");
+                return;
+            }
+            const data = await res.json();
+            setSearchResults(data.users ?? []);
+        } catch (e) {
+            console.error(e);
+            alert("검색 중 오류가 발생했습니다.");
+        } finally {
+            setIsSearching(false);
+        }
     };
 
-    const applyBulk = async () => {
-        setLoading(true);
-        setMsg(null);
-        setError(null);
+    const handleAddSearchResult = (u: UserItem) => {
+        mergeSelected([u]);
+    };
+
+    const handleRemoveSelected = (id: string) => {
+        setSelectedUsers((prev) => prev.filter((u) => u.id !== id));
+    };
+
+    const handleClearSelected = () => {
+        if (
+            selectedUsers.length > 0 &&
+            !confirm("선택된 대상 목록을 모두 비우시겠습니까?")
+        ) {
+            return;
+        }
+        setSelectedUsers([]);
+    };
+
+    // 🔹 전체 / 학년 / 학급 선택
+    const handleSelectScope = async (
+        scope: "ALL" | "GRADE" | "GRADE_CLASS"
+    ) => {
+        setIsSelecting(true);
         try {
-            if (selectedList.length === 0) {
-                throw new Error("선택된 유저가 없습니다.");
+            const payload: any = { scope };
+            if (scope === "GRADE") {
+                payload.grade = gradeForBulk;
+            } else if (scope === "GRADE_CLASS") {
+                payload.grade = gradeForClass;
+                payload.classRoom = classForBulk;
             }
 
-            const body: any = {
-                userIds: selectedList.map((u) => u.id),
-                mode,
-            };
+            const res = await fetch("/api/admin/select-users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
 
-            if (mode === "SET" || mode === "ADD") {
-                if (amount === "" || isNaN(Number(amount))) {
-                    throw new Error("금액을 숫자로 입력해 주세요.");
-                }
-                body.amount = Number(amount);
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                alert(
+                    data?.error ?? "대상 선택 중 오류가 발생했습니다."
+                );
+                return;
             }
 
+            const data = await res.json();
+            const users: UserItem[] = data.users ?? [];
+            if (users.length === 0) {
+                alert("해당 조건에 해당하는 학생이 없습니다.");
+                return;
+            }
+
+            mergeSelected(users);
+            alert(
+                `대상 목록에 ${users.length}명을 추가했습니다. (총 ${selectedUsers.length + users.length
+                }명)`
+            );
+        } catch (e) {
+            console.error(e);
+            alert("대상 선택 중 오류가 발생했습니다.");
+        } finally {
+            setIsSelecting(false);
+        }
+    };
+
+    const handleApply = async () => {
+        if (selectedUsers.length === 0) {
+            alert("적용할 대상이 없습니다.");
+            return;
+        }
+
+        if ((mode === "SET" || mode === "ADD") && !Number.isFinite(amount)) {
+            alert("금액을 올바르게 입력해주세요.");
+            return;
+        }
+
+        if (
+            !confirm(
+                `선택된 ${selectedUsers.length}명에게 ${
+                    mode === "CLEAR"
+                        ? "잔액을 0으로 초기화"
+                        : mode === "SET"
+                            ? `잔액을 ${amount} C로 설정`
+                            : `${amount} C를 증감`
+                } 하시겠습니까?`
+            )
+        ) {
+            return;
+        }
+
+        setIsApplying(true);
+        try {
             const res = await fetch("/api/admin/bulk-users", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
+                body: JSON.stringify({
+                    userIds: selectedUsers.map((u) => u.id),
+                    mode,
+                    amount,
+                }),
             });
 
-            const data = await res.json().catch(() => ({}));
+            const data = await res.json();
             if (!res.ok) {
-                throw new Error(data.error || data.message || "요청 실패");
+                alert(data?.error ?? "적용 중 오류가 발생했습니다.");
+                return;
             }
 
-            setMsg(
-                `총 ${selectedList.length}명에게 적용 완료. (mode: ${mode}${
-                    body.amount != null ? `, amount: ${body.amount}` : ""
-                })`
-            );
-
-            // 검색 결과/선택 목록의 잔액도 갱신해줌
+            // 응답에 최신 balance가 있으면 갱신
             if (Array.isArray(data.users)) {
-                const mapById: Record<string, number> = {};
-                for (const u of data.users as { id: string; balance: number }[]) {
-                    mapById[u.id] = u.balance;
-                }
-
-                setSearchResults((prev) =>
+                const mapUpdated = new Map<string, number>();
+                data.users.forEach((u: any) =>
+                    mapUpdated.set(u.id, u.balance ?? 0)
+                );
+                setSelectedUsers((prev) =>
                     prev.map((u) =>
-                        mapById[u.id] != null ? { ...u, balance: mapById[u.id] } : u
+                        mapUpdated.has(u.id)
+                            ? { ...u, balance: mapUpdated.get(u.id)! }
+                            : u
                     )
                 );
-                setSelected((prev) => {
-                    const copy: Record<string, UserLite> = {};
-                    for (const u of Object.values(prev)) {
-                        if (mapById[u.id] != null) {
-                            copy[u.id] = { ...u, balance: mapById[u.id] };
-                        } else {
-                            copy[u.id] = u;
-                        }
-                    }
-                    return copy;
-                });
             }
-        } catch (e: any) {
-            setError(e.message || "일괄 적용 중 오류가 발생했습니다.");
+
+            alert(
+                `총 ${data.count ?? selectedUsers.length}명의 잔액을 수정했습니다.`
+            );
+        } catch (e) {
+            console.error(e);
+            alert("적용 중 오류가 발생했습니다.");
         } finally {
-            setLoading(false);
+            setIsApplying(false);
         }
     };
 
     return (
         <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-50">
+            <h2 className="text-lg font-semibold text-gray-100">
                 유저 잔액 관리 (이름 검색 → 대상 목록 → 일괄 적용)
             </h2>
 
-            {/* 검색 영역 */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input
-                    className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-gray-50 outline-none focus:border-emerald-400"
-                    placeholder="이름 세 글자 또는 이메일 일부로 검색"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") onSearch();
-                    }}
-                />
-                <button
-                    type="button"
-                    onClick={onSearch}
-                    disabled={loading}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-900"
-                >
-                    검색
-                </button>
-            </div>
+            {/* 🔹 빠른 대상 추가 영역 */}
+            <div className="p-4 rounded-lg bg-slate-800 space-y-3 text-sm text-gray-50">
+                <p className="font-semibold text-sm">대상 빠르게 추가</p>
 
-            {/* 검색 결과 */}
-            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3 space-y-2">
-                <p className="text-xs text-slate-400 mb-1">
-                    검색 결과에서 체크하면 아래 &quot;선택된 대상&quot;에 추가됩니다.
-                </p>
-                <div className="max-h-64 overflow-y-auto">
-                    <table className="min-w-full text-[11px]">
-                        <thead>
-                        <tr className="bg-slate-800/80">
-                            <th className="px-2 py-1 text-center">선택</th>
-                            <th className="px-2 py-1 text-left">이름</th>
-                            <th className="px-2 py-1 text-left">이메일</th>
-                            <th className="px-2 py-1 text-center">학년</th>
-                            <th className="px-2 py-1 text-center">반</th>
-                            <th className="px-2 py-1 text-right">잔액</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {searchResults.map((u) => {
-                            const checked = !!selected[u.id];
-                            return (
-                                <tr
-                                    key={u.id}
-                                    className="border-t border-slate-800"
-                                >
-                                    <td className="px-2 py-1 text-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={checked}
-                                            onChange={() => toggleSelect(u)}
-                                        />
-                                    </td>
-                                    <td className="px-2 py-1">
-                                        {u.name}
-                                        {u.classRole === "회장" && (
-                                            <span className="ml-1 text-[9px] text-amber-300">
-                          (회장)
-                        </span>
-                                        )}
-                                        {u.classRole === "부회장" && (
-                                            <span className="ml-1 text-[9px] text-sky-300">
-                          (부회장)
-                        </span>
-                                        )}
-                                    </td>
-                                    <td className="px-2 py-1">{u.email}</td>
-                                    <td className="px-2 py-1 text-center">
-                                        {u.grade ?? "-"}
-                                    </td>
-                                    <td className="px-2 py-1 text-center">
-                                        {u.classRoom ?? "-"}
-                                    </td>
-                                    <td className="px-2 py-1 text-right">
-                                        {u.balance.toLocaleString()}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                        {searchResults.length === 0 && (
-                            <tr>
-                                <td
-                                    colSpan={6}
-                                    className="px-2 py-3 text-center text-slate-500"
-                                >
-                                    검색 결과가 없습니다.
-                                </td>
-                            </tr>
-                        )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* 선택된 대상 + 일괄 적용 폼 */}
-            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                    <p className="text-xs text-slate-300">
-                        선택된 대상:{" "}
-                        <span className="font-semibold">
-              {selectedList.length}명
-            </span>
-                    </p>
+                <div className="flex flex-wrap gap-2 items-center">
                     <button
                         type="button"
-                        onClick={clearSelected}
-                        className="text-[11px] text-slate-400 hover:text-slate-200 underline"
+                        onClick={() => handleSelectScope("ALL")}
+                        disabled={isSelecting}
+                        className="px-3 py-1 rounded-md bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-xs"
                     >
-                        선택 목록 초기화
+                        전체 학생 추가
+                    </button>
+
+                    {/* 학년 전체 */}
+                    <div className="flex items-center gap-1 text-xs">
+                        <span>학년 전체:</span>
+                        <select
+                            value={gradeForBulk}
+                            onChange={(e) => setGradeForBulk(Number(e.target.value))}
+                            className="border rounded px-1 py-0.5 bg-slate-900 text-xs"
+                        >
+                            <option value={1}>1학년</option>
+                            <option value={2}>2학년</option>
+                            <option value={3}>3학년</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => handleSelectScope("GRADE")}
+                            disabled={isSelecting}
+                            className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 disabled:opacity-50"
+                        >
+                            추가
+                        </button>
+                    </div>
+
+                    {/* 학년+반 전체 */}
+                    <div className="flex items-center gap-1 text-xs">
+                        <span>학급 전체:</span>
+                        <select
+                            value={gradeForClass}
+                            onChange={(e) => setGradeForClass(Number(e.target.value))}
+                            className="border rounded px-1 py-0.5 bg-slate-900 text-xs"
+                        >
+                            <option value={1}>1학년</option>
+                            <option value={2}>2학년</option>
+                            <option value={3}>3학년</option>
+                        </select>
+                        <span> / </span>
+                        <select
+                            value={classForBulk}
+                            onChange={(e) => setClassForBulk(Number(e.target.value))}
+                            className="border rounded px-1 py-0.5 bg-slate-900 text-xs"
+                        >
+                            <option value={1}>1반</option>
+                            <option value={2}>2반</option>
+                            <option value={3}>3반</option>
+                            <option value={4}>4반</option>
+                            <option value={5}>5반</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => handleSelectScope("GRADE_CLASS")}
+                            disabled={isSelecting}
+                            className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 disabled:opacity-50"
+                        >
+                            추가
+                        </button>
+                    </div>
+                </div>
+
+                <p className="text-xs text-gray-400">
+                    * 관리자 계정과 부스 계정은 자동으로 제외됩니다.
+                </p>
+            </div>
+
+            {/* 🔹 이름 검색 영역 */}
+            <div className="p-4 rounded-lg bg-slate-800 space-y-3 text-sm text-gray-50">
+                <p className="font-semibold text-sm">이름 / 이메일 검색</p>
+                <div className="flex gap-2">
+                    <input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleSearch();
+                            }
+                        }}
+                        placeholder="이름 또는 이메일 일부"
+                        className="flex-1 px-2 py-1 rounded-md text-sm bg-slate-900 border border-slate-600 text-gray-50"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleSearch}
+                        disabled={isSearching}
+                        className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-xs text-white disabled:opacity-50"
+                    >
+                        검색
                     </button>
                 </div>
 
-                <div className="max-h-40 overflow-y-auto border border-slate-800 rounded-md">
-                    {selectedList.length === 0 ? (
-                        <p className="px-2 py-2 text-[11px] text-slate-500">
-                            선택된 사용자가 없습니다.
+                <div className="max-h-60 overflow-y-auto border border-slate-700 rounded-md mt-2 bg-slate-900">
+                    {searchResults.length === 0 ? (
+                        <p className="text-xs text-gray-400 px-2 py-2">
+                            검색 결과가 없습니다.
                         </p>
                     ) : (
-                        <ul className="text-[11px]">
-                            {selectedList.map((u) => (
+                        <ul className="text-xs divide-y divide-slate-700">
+                            {searchResults.map((u) => (
                                 <li
                                     key={u.id}
-                                    className="flex justify-between px-2 py-1 border-b border-slate-800"
+                                    className="flex items-center justify-between px-2 py-1"
                                 >
-                  <span>
-                    {u.name} ({u.email}){" "}
-                      {u.grade && u.classRoom
-                          ? ` / ${u.grade}-${u.classRoom}`
-                          : ""}
-                      {u.classRole
-                          ? ` / ${u.classRole}`
-                          : ""}
-                  </span>
-                                    <span>{u.balance.toLocaleString()} C</span>
+                                    <div>
+                                        <p className="font-medium">
+                                            {u.name}{" "}
+                                            <span className="text-[10px] text-gray-400">
+                        ({u.email})
+                      </span>
+                                        </p>
+                                        <p className="text-[11px] text-gray-400">
+                                            {u.grade
+                                                ? `${u.grade}학년 ${u.classRoom ?? "?"}반`
+                                                : "학급 정보 없음"}
+                                            {" · "}
+                                            잔액: {u.balance} C
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAddSearchResult(u)}
+                                        className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[11px]"
+                                    >
+                                        추가
+                                    </button>
                                 </li>
                             ))}
                         </ul>
                     )}
                 </div>
+            </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                    <div>
-                        <label className="block text-xs text-gray-300 mb-1">
-                            모드
-                        </label>
+            {/* 🔹 선택된 대상 목록 */}
+            <div className="p-4 rounded-lg bg-slate-800 space-y-3 text-sm text-gray-50">
+                <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm">
+                        선택된 대상 ({selectedUsers.length}명)
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleClearSelected}
+                        className="px-2 py-1 text-[11px] rounded-md bg-red-600 hover:bg-red-700 text-white"
+                    >
+                        목록 비우기
+                    </button>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto border border-slate-700 rounded-md bg-slate-900">
+                    {selectedUsers.length === 0 ? (
+                        <p className="text-xs text-gray-400 px-2 py-2">
+                            선택된 대상이 없습니다.
+                        </p>
+                    ) : (
+                        <ul className="text-xs divide-y divide-slate-700">
+                            {selectedUsers.map((u) => (
+                                <li
+                                    key={u.id}
+                                    className="flex items-center justify-between px-2 py-1"
+                                >
+                                    <div>
+                                        <p className="font-medium">
+                                            {u.name}{" "}
+                                            <span className="text-[10px] text-gray-400">
+                        ({u.email})
+                      </span>
+                                        </p>
+                                        <p className="text-[11px] text-gray-400">
+                                            {u.grade
+                                                ? `${u.grade}학년 ${u.classRoom ?? "?"}반`
+                                                : "학급 정보 없음"}
+                                            {" · "}
+                                            잔액: {u.balance} C
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveSelected(u.id)}
+                                        className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[11px]"
+                                    >
+                                        제거
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+
+            {/* 🔹 일괄 적용 설정 */}
+            <div className="p-4 rounded-lg bg-slate-800 space-y-3 text-sm text-gray-50">
+                <p className="font-semibold text-sm">일괄 적용</p>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                    <label className="flex items-center gap-1">
+                        <span>모드:</span>
                         <select
                             value={mode}
-                            onChange={(e) =>
-                                setMode(e.target.value as BulkMode)
-                            }
-                            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-gray-50 outline-none focus:border-emerald-400"
+                            onChange={(e) => setMode(e.target.value as BulkMode)}
+                            className="border rounded px-2 py-1 bg-slate-900"
                         >
-                            <option value="ADD">ADD (기존 잔액에 더하기)</option>
-                            <option value="SET">SET (잔액을 이 값으로 설정)</option>
-                            <option value="CLEAR">CLEAR (0으로 초기화)</option>
+                            <option value="ADD">증감 (ADD)</option>
+                            <option value="SET">설정 (SET)</option>
+                            <option value="CLEAR">0으로 초기화 (CLEAR)</option>
                         </select>
-                    </div>
+                    </label>
 
-                    {(mode === "SET" || mode === "ADD") && (
-                        <div>
-                            <label className="block text-xs text-gray-300 mb-1">
-                                금액
-                            </label>
+                    {(mode === "ADD" || mode === "SET") && (
+                        <label className="flex items-center gap-1">
+                            <span>금액:</span>
                             <input
                                 type="number"
-                                className="w-24 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-gray-50 outline-none focus:border-emerald-400"
                                 value={amount}
-                                onChange={(e) =>
-                                    setAmount(
-                                        e.target.value === "" ? "" : Number(e.target.value)
-                                    )
-                                }
+                                onChange={(e) => setAmount(Number(e.target.value))}
+                                className="w-24 px-2 py-1 rounded bg-slate-900 border border-slate-600"
                             />
-                        </div>
+                            <span>C</span>
+                        </label>
                     )}
 
                     <button
                         type="button"
-                        onClick={applyBulk}
-                        disabled={loading}
-                        className="sm:ml-2 rounded-md bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:bg-emerald-900"
+                        onClick={handleApply}
+                        disabled={isApplying}
+                        className="ml-auto px-4 py-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-xs text-white disabled:opacity-50"
                     >
-                        선택된 유저들에게 적용
+                        {isApplying ? "적용 중..." : "선택 대상에 적용"}
                     </button>
                 </div>
 
-                {msg && (
-                    <p className="text-xs text-emerald-400 whitespace-pre-line">
-                        {msg}
-                    </p>
-                )}
-                {error && (
-                    <p className="text-xs text-red-400 whitespace-pre-line">
-                        {error}
-                    </p>
-                )}
+                <p className="text-[11px] text-gray-400">
+                    * 관리자 / 부스 계정은 항상 대상에서 제외됩니다.
+                </p>
             </div>
         </section>
     );
