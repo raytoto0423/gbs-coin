@@ -1,88 +1,116 @@
 // app/api/admin/adjust-user/route.ts
-import { NextRequest, NextResponse } from "next/server";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export const dynamic = "force-dynamic"; // 빌드 타임 프리렌더/모듈 실행 방지
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
-    // ⚠️ Prisma / Auth 는 핸들러 안에서만 동적 import
-    const [{ auth }, { prisma }] = await Promise.all([
-        import("@/auth"),
-        import("@/lib/prisma"),
-    ]);
+const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
+type Mode = "SET" | "ADD" | "CLEAR";
+
+export async function POST(req: Request) {
     const session = await auth();
 
-    // 관리자만 접근 가능
-    if (!session?.user || session.user.role !== "ADMIN") {
+    // 관리자 체크
+    if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return NextResponse.json(
-            { message: "관리자 권한이 필요합니다." },
-            { status: 403 }
+            { message: "관리자만 사용할 수 있습니다." },
+            { status: 401 }
         );
     }
 
-    const body = await req.json().catch(() => null);
-    if (!body) {
-        return NextResponse.json(
-            { message: "잘못된 요청입니다." },
-            { status: 400 }
-        );
-    }
-
-    const { userId, amount, type } = body as {
+    const body = (await req.json().catch(() => null)) as
+        | {
+        email?: string;
         userId?: string;
+        mode?: Mode;
         amount?: number;
-        type?: "INCREASE" | "DECREASE";
-    };
+    }
+        | null;
 
-    if (!userId || typeof amount !== "number") {
+    const email = body?.email?.trim();
+    const userId = body?.userId?.trim();
+    const mode = body?.mode;
+    const amount = body?.amount;
+
+    if (!mode) {
         return NextResponse.json(
-            { message: "userId와 amount가 필요합니다." },
+            { message: "mode(SET/ADD/CLEAR)가 필요합니다." },
             { status: 400 }
         );
     }
 
-    if (type !== "INCREASE" && type !== "DECREASE") {
+    if (!email && !userId) {
         return NextResponse.json(
-            { message: "type은 INCREASE 또는 DECREASE 여야 합니다." },
+            { message: "email 또는 userId 중 하나는 필요합니다." },
             { status: 400 }
         );
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if ((mode === "SET" || mode === "ADD") && typeof amount !== "number") {
+        return NextResponse.json(
+            { message: "SET/ADD 모드에서는 amount(숫자)가 필요합니다." },
+            { status: 400 }
+        );
+    }
+
+    // 유저 찾기 (이메일 우선)
+    const user = await prisma.user.findFirst({
+        where: {
+            ...(email ? { email } : {}),
+            ...(userId ? { id: userId } : {}),
+        },
+    });
 
     if (!user) {
         return NextResponse.json(
-            { message: "해당 사용자를 찾을 수 없습니다." },
+            { message: "해당 유저를 찾을 수 없습니다." },
             { status: 404 }
         );
     }
 
-    const newBalance =
-        type === "INCREASE" ? user.balance + amount : user.balance - amount;
-
-    if (newBalance < 0) {
+    // 관리자 본인 잔액은 건드리지 않기
+    if (user.email === ADMIN_EMAIL) {
         return NextResponse.json(
-            { message: "잔액이 음수가 될 수 없습니다." },
+            { message: "관리자 계정의 잔액은 변경할 수 없습니다." },
             { status: 400 }
         );
     }
 
-    try {
-        const updated = await prisma.user.update({
-            where: { id: userId },
-            data: { balance: newBalance },
-        });
+    let newBalance = user.balance;
 
-        return NextResponse.json({
-            ok: true,
-            message: "사용자 잔액이 수정되었습니다.",
-            user: updated,
-        });
-    } catch (error) {
-        console.error("adjust-user error", error);
-        return NextResponse.json(
-            { message: "사용자 잔액 수정 중 오류가 발생했습니다." },
-            { status: 500 }
-        );
+    if (mode === "CLEAR") {
+        newBalance = 0;
+    } else if (mode === "SET") {
+        if ((amount as number) < 0) {
+            return NextResponse.json(
+                { message: "잔액은 0 이상이어야 합니다." },
+                { status: 400 }
+            );
+        }
+        newBalance = amount as number;
+    } else if (mode === "ADD") {
+        newBalance = user.balance + (amount as number);
     }
+
+    const updated = await prisma.user.update({
+        where: { id: user.id },
+        data: { balance: newBalance },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            balance: true,
+            grade: true,
+            classRoom: true,
+            classRole: true,
+        },
+    });
+
+    return NextResponse.json({
+        ok: true,
+        user: updated,
+    });
 }
