@@ -86,7 +86,7 @@ export default async function UserPage() {
     if (isAdminAccount) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-50">
                     관리자 계정입니다.
                 </h1>
                 <p className="text-sm text-gray-700 text-center">
