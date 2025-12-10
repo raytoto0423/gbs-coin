@@ -1,9 +1,18 @@
 // app/api/booth/activities/route.ts
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 
+// 빌드 시에 이 라우트를 정적으로 다루지 않게 힌트
+export const dynamic = "force-dynamic";
+
+// GET /api/booth/activities
+// 현재 부스의 활동 목록 조회
 export async function GET() {
+    // auth, prisma 는 핸들러 안에서 동적 import (빌드 시 DB/NextAuth 실행 방지)
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma"),
+    ]);
+
     const session = await auth();
     if (!session?.user || session.user.role !== "BOOTH") {
         return NextResponse.json({ message: "권한 없음" }, { status: 401 });
@@ -19,7 +28,14 @@ export async function GET() {
     return NextResponse.json({ activities });
 }
 
+// POST /api/booth/activities
+// 활동 추가 (title, price, type = "PAY" | "REWARD")
 export async function POST(request: Request) {
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma"),
+    ]);
+
     const session = await auth();
     if (!session?.user || session.user.role !== "BOOTH") {
         return NextResponse.json({ message: "권한 없음" }, { status: 401 });
@@ -39,11 +55,17 @@ export async function POST(request: Request) {
     };
 
     if (!title || typeof price !== "number" || price < 0) {
-        return NextResponse.json({ message: "제목과 가격을 확인하세요." }, { status: 400 });
+        return NextResponse.json(
+            { message: "제목과 가격을 확인하세요." },
+            { status: 400 },
+        );
     }
 
     if (type !== "PAY" && type !== "REWARD") {
-        return NextResponse.json({ message: "잘못된 타입입니다." }, { status: 400 });
+        return NextResponse.json(
+            { message: "잘못된 타입입니다." },
+            { status: 400 },
+        );
     }
 
     const activity = await prisma.activity.create({
@@ -58,7 +80,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ activity }, { status: 201 });
 }
 
+// DELETE /api/booth/activities?id=...
+// 해당 부스의 특정 활동 삭제
 export async function DELETE(request: Request) {
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma"),
+    ]);
+
     const session = await auth();
     if (!session?.user || session.user.role !== "BOOTH") {
         return NextResponse.json({ message: "권한 없음" }, { status: 401 });
@@ -78,7 +107,10 @@ export async function DELETE(request: Request) {
     });
 
     if (!existing) {
-        return NextResponse.json({ message: "해당 활동이 없거나 권한이 없습니다." }, { status: 404 });
+        return NextResponse.json(
+            { message: "해당 활동이 없거나 권한이 없습니다." },
+            { status: 404 },
+        );
     }
 
     await prisma.activity.delete({ where: { id } });
