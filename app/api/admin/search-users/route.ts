@@ -30,10 +30,10 @@ export async function GET(req: Request) {
 
     const users = await prisma.user.findMany({
         where: {
-            name: {
-                contains: q,
-                mode: "insensitive", // 대소문자 무시
-            },
+            AND: [
+                { email: { not: ADMIN_EMAIL } },
+                { role: { not: "BOOTH" } },
+            ],
         },
         orderBy: [
             { grade: "asc" },
