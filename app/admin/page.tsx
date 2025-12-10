@@ -19,8 +19,21 @@ export default async function AdminPage() {
         );
     }
 
-    // 통계 + 부스 리스트 가져오기
-    const [userCount, boothCount, txCount, booths] = await Promise.all([
+    // 데이터 불러오기
+    const [users, userCount, boothCount, txCount, booths] = await Promise.all([
+        prisma.user.findMany({
+            orderBy: [{ grade: "asc" }, { classRoom: "asc" }],
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                grade: true,
+                classRoom: true,
+                classRole: true,
+                balance: true,
+            },
+        }),
         prisma.user.count(),
         prisma.booth.count(),
         prisma.transaction.count(),
@@ -43,7 +56,8 @@ export default async function AdminPage() {
 
     return (
         <main className="min-h-screen bg-slate-950 text-slate-50">
-            <div className="mx-auto max-w-5xl px-4 py-6 space-y-8">
+            <div className="mx-auto max-w-6xl px-4 py-6 space-y-10">
+
                 {/* 상단 헤더 */}
                 <header className="flex items-center justify-between">
                     <div>
@@ -63,7 +77,7 @@ export default async function AdminPage() {
                     </div>
                 </header>
 
-                {/* 간단 통계 카드 */}
+                {/* 통계 카드 */}
                 <section className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-4">
                         <p className="text-xs text-slate-400">등록된 유저 수</p>
@@ -79,16 +93,43 @@ export default async function AdminPage() {
                     </div>
                 </section>
 
-                {/* 관리자 액션 (잔액 초기화 + 부스 잔액 조정) */}
+                {/* 🔥 관리자 액션 (전체 잔액 초기화 + 부스 잔액 조정 등) */}
                 <AdminActions />
 
-                {/* 부스 목록 + 비밀번호 표시 */}
-                <section className="mt-8">
+                {/* 📌 유저 잔액 관리 섹션 */}
+                <section>
+                    <h2 className="text-lg font-semibold mb-3">유저 잔액 관리</h2>
+                    <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/60">
+                        <table className="min-w-full text-xs">
+                            <thead>
+                            <tr className="bg-slate-800/80">
+                                <th className="px-3 py-2 text-left">이름</th>
+                                <th className="px-3 py-2 text-left">이메일</th>
+                                <th className="px-3 py-2 text-center">학년</th>
+                                <th className="px-3 py-2 text-center">반</th>
+                                <th className="px-3 py-2 text-center">역할</th>
+                                <th className="px-3 py-2 text-right">잔액</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {users.map((u) => (
+                                <tr key={u.id} className="border-t border-slate-800">
+                                    <td className="px-3 py-1.5">{u.name}</td>
+                                    <td className="px-3 py-1.5 font-mono">{u.email}</td>
+                                    <td className="px-3 py-1.5 text-center">{u.grade ?? "-"}</td>
+                                    <td className="px-3 py-1.5 text-center">{u.classRoom ?? "-"}</td>
+                                    <td className="px-3 py-1.5 text-center">{u.classRole ?? "학생"}</td>
+                                    <td className="px-3 py-1.5 text-right">{u.balance}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                {/* 📌 부스 목록 + 비밀번호 표시 */}
+                <section className="mt-10">
                     <h2 className="text-lg font-semibold mb-3">부스 목록 및 비밀번호</h2>
-                    <p className="text-xs text-slate-400 mb-2">
-                        비밀번호는 <span className="font-mono">passwordPlain</span> 컬럼에 표시됩니다.
-                        (초기값 1234, 회장이 변경하면 여기 값도 같이 바뀝니다.)
-                    </p>
 
                     <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/60">
                         <table className="min-w-full text-xs">
@@ -98,7 +139,7 @@ export default async function AdminPage() {
                                 <th className="px-3 py-2 text-left">이름</th>
                                 <th className="px-3 py-2 text-center">학년</th>
                                 <th className="px-3 py-2 text-center">반</th>
-                                <th className="px-3 py-2 text-right">잔액 (C)</th>
+                                <th className="px-3 py-2 text-right">잔액</th>
                                 <th className="px-3 py-2 text-left">비밀번호</th>
                             </tr>
                             </thead>
@@ -107,31 +148,14 @@ export default async function AdminPage() {
                                 <tr key={b.id} className="border-t border-slate-800">
                                     <td className="px-3 py-1.5 font-mono">{b.id}</td>
                                     <td className="px-3 py-1.5">{b.name}</td>
-                                    <td className="px-3 py-1.5 text-center">
-                                        {b.grade ?? "-"}
-                                    </td>
-                                    <td className="px-3 py-1.5 text-center">
-                                        {b.classRoom ?? "-"}
-                                    </td>
-                                    <td className="px-3 py-1.5 text-right">
-                                        {b.balance.toLocaleString()}
-                                    </td>
+                                    <td className="px-3 py-1.5 text-center">{b.grade ?? "-"}</td>
+                                    <td className="px-3 py-1.5 text-center">{b.classRoom ?? "-"}</td>
+                                    <td className="px-3 py-1.5 text-right">{b.balance}</td>
                                     <td className="px-3 py-1.5 font-mono">
                                         {b.passwordPlain ?? "(미설정)"}
                                     </td>
                                 </tr>
                             ))}
-                            {booths.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="px-3 py-4 text-center text-slate-500"
-                                    >
-                                        등록된 부스가 없습니다. /api/dev/seed-booths 실행 후 다시
-                                        확인해 주세요.
-                                    </td>
-                                </tr>
-                            )}
                             </tbody>
                         </table>
                     </div>
