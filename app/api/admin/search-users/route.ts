@@ -32,7 +32,7 @@ export async function GET(req: Request) {
         where: {
             AND: [
                 { email: { not: ADMIN_EMAIL } },
-                { role: { not: "BOOTH" } },
+                { role: { endsWith: "@booth.local" } },
             ],
         },
         orderBy: [
