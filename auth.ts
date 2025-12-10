@@ -6,9 +6,20 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "./lib/prisma";
 
+// auth.ts (일부)
+
+// NextAuth v5 스타일
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import { prisma } from "./lib/prisma";
+
+const SCHOOL_EMAIL_REGEX =
+    /^gbs\.(s|t)(\d{2})(\d{4})@ggh\.goe\.go\.kr$/i;
+
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
-// ✅ next-auth 타입 확장 (jwt 모듈 건드리지 않음)
+// ✅ next-auth 타입 확장
 declare module "next-auth" {
     interface Session {
         user: {
@@ -16,11 +27,10 @@ declare module "next-auth" {
             email: string;
             name: string | null;
             role: string;
-            boothId?: string | null;
-
             grade?: number | null;
             classRoom?: number | null;
-            classRole?: string | null; // "학생" | "회장" | "부회장"
+            classRole?: string | null;
+            boothId?: string | null;
         };
     }
 
@@ -29,24 +39,21 @@ declare module "next-auth" {
         email: string;
         name: string | null;
         role: string;
-        boothId?: string | null;
-
         grade?: number | null;
         classRoom?: number | null;
         classRole?: string | null;
+        boothId?: string | null;
     }
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
     trustHost: true,
-
     providers: [
         // 1) 구글 로그인 (학생/선생님/관리자)
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-            // PKCE 문제 방지용
-            checks: ["none"],
+            checks: ["none"], // pkce 에러 막으려고 쓰던 설정 유지
         }),
 
         // 2) 부스 로그인 (부스 ID + 비밀번호)
@@ -63,39 +70,33 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                 console.log("[booth-login] 시도 boothId =", boothId);
 
-                if (!boothId || !password) {
-                    console.log("[booth-login] boothId 또는 password 없음");
-                    return null;
-                }
+                if (!boothId || !password) return null;
 
                 const booth = await prisma.booth.findUnique({
                     where: { id: boothId },
                 });
 
                 if (!booth) {
-                    console.log("[booth-login] 해당 부스를 찾을 수 없음");
+                    console.log("[booth-login] 부스 없음");
                     return null;
                 }
 
                 const bcrypt = await import("bcryptjs");
-
                 let ok = false;
 
                 try {
-                    // 1) bcrypt 해시 비교
                     ok = await bcrypt.compare(password, booth.passwordHash);
                 } catch (e) {
                     console.error("[booth-login] bcrypt.compare 에러", e);
                 }
 
-                // 2) 혹시 DB에 평문 1234가 들어있다면 이것도 임시 허용
-                if (!ok && booth.passwordPlain && password === booth.passwordPlain) {
-                    console.log("[booth-login] 평문 비밀번호가 DB 값과 일치 (임시 허용)");
+                // passwordPlain 이 있을 경우 임시 허용
+                if (!ok && booth.passwordPlain && booth.passwordPlain === password) {
                     ok = true;
                 }
 
                 if (!ok) {
-                    console.log("[booth-login] 비밀번호 불일치: 입력 =", password, " / DB =", booth.passwordPlain);
+                    console.log("[booth-login] 비밀번호 불일치");
                     return null;
                 }
 
@@ -111,7 +112,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
         }),
 
-        // 3) (옵션) 개발용 유저 로그인 – 필요 없으면 이 블록 삭제해도 됨
+        // 3) 개발용 계정 (원래 쓰던 거 그대로)
         Credentials({
             id: "dev-user",
             name: "Dev User Login",
@@ -121,7 +122,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
             async authorize(credentials) {
                 const email = credentials?.email as string | undefined;
-                const roleInput = (credentials?.role as string | undefined)?.toUpperCase() ?? "";
+                const roleInput =
+                    (credentials?.role as string | undefined)?.toUpperCase() ?? "";
 
                 if (!email) return null;
 
@@ -147,6 +149,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    grade: user.grade,
+                    classRoom: user.classRoom,
+                    classRole: user.classRole,
                 };
             },
         }),
@@ -161,18 +166,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
 
     callbacks: {
-        /**
-         * 🔐 signIn: "CSV에 있는 학생만" 구글 로그인 허용
-         */
+        // ✅ 구글 로그인 시 DB upsert (학년/반/역할은 seed 데이터 사용)
         async signIn({ user, account }) {
             if (account?.provider === "google") {
                 const email = user.email ?? "";
 
-                // 1) 관리자 이메일은 특별 취급 (DB에 없으면 만들어줌)
+                // 관리자
                 if (email === ADMIN_EMAIL) {
                     await prisma.user.upsert({
                         where: { email },
-                        update: { name: user.name ?? "관리자", role: "ADMIN" },
+                        update: {
+                            name: user.name ?? "관리자",
+                            role: "ADMIN",
+                        },
                         create: {
                             email,
                             name: user.name ?? "관리자",
@@ -182,57 +188,58 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     return true;
                 }
 
-                // 2) 나머지는 CSV 기반으로 seed된 User만 허용
-                const dbUser = await prisma.user.findUnique({
+                // 학교 이메일만 허용
+                const match = email.match(SCHOOL_EMAIL_REGEX);
+                if (!match) return false;
+
+                const kind = match[1].toLowerCase(); // s/t
+                const role = kind === "s" ? "STUDENT" : "TEACHER";
+
+                // 📌 grade / classRoom / classRole 은 이미 seed 에 들어있다고 가정 → 여기선 role 위주로만 업데이트
+                await prisma.user.upsert({
                     where: { email },
+                    update: {
+                        name: user.name ?? "",
+                        role,
+                    },
+                    create: {
+                        email,
+                        name: user.name ?? "",
+                        role,
+                    },
                 });
 
-                if (!dbUser) {
-                    // CSV/seed에 없는 이메일 → 로그인 거부
-                    return false;
-                }
-
-                // 학생/선생/회장/부회장 등은 이미 seed에서 role/grade/classRoom/classRole 입력됨
                 return true;
             }
 
-            // 부스/개발용 로그인은 여기서 막지 않음
             return true;
         },
 
-        /**
-         * 🧠 jwt: DB의 학년/반/역할 정보를 JWT에 넣기
-         */
+        // ✅ JWT에 우리가 쓸 값 저장
         async jwt({ token, user, account }) {
             const t: any = token;
 
             if (user && account) {
-                // 구글 로그인 또는 dev-user 로그인
                 if (account.provider === "google" || account.provider === "dev-user") {
                     const dbUser = await prisma.user.findUnique({
                         where: { email: user.email! },
-                        select: {
-                            id: true,
-                            role: true,
-                            grade: true,
-                            classRoom: true,
-                            classRole: true,
-                        },
                     });
 
                     if (dbUser) {
                         t.userId = dbUser.id;
                         t.role = dbUser.role;
-                        t.grade = dbUser.grade;
-                        t.classRoom = dbUser.classRoom;
-                        t.classRole = dbUser.classRole;
                         t.boothId = null;
+
+                        // 🔥 학년/반/학급 역할도 토큰에 저장
+                        t.grade = dbUser.grade ?? null;
+                        t.classRoom = dbUser.classRoom ?? null;
+                        t.classRole = dbUser.classRole ?? null;
                     }
                 } else if (account.provider === "booth-login") {
-                    // 부스 로그인
                     t.userId = (user as any).id;
                     t.role = "BOOTH";
                     t.boothId = (user as any).boothId ?? (user as any).id;
+
                     t.grade = null;
                     t.classRoom = null;
                     t.classRole = null;
@@ -242,9 +249,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             return t;
         },
 
-        /**
-         * 📦 session: JWT에 넣어둔 정보를 프론트에서 쓸 수 있게 세션에 복사
-         */
+        // ✅ 세션에 우리가 쓸 user 정보 세팅
         async session({ session, token }) {
             const t: any = token;
 
@@ -255,7 +260,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 session.user.role = t.role ?? "";
                 session.user.boothId = t.boothId ?? null;
 
-                // 🔥 여기서 학년/반/학급 역할 정보도 세션에 실어줌
+                // 🔥 학년/반/학급 역할 세션에 넣기
                 session.user.grade = t.grade ?? null;
                 session.user.classRoom = t.classRoom ?? null;
                 session.user.classRole = t.classRole ?? null;
@@ -267,3 +272,4 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
 });
+

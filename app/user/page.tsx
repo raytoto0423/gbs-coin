@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
+import ClassPresidentPanel from "./ClassPresidentPanel"; // 🔥 회장용 패널
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
@@ -21,7 +22,7 @@ export default async function UserPage() {
     const email = session.user.email ?? "";
     const name = session.user.name ?? "";
 
-    // 🔥 1) 유저 조회
+    // 🔥 1) 유저 조회 (학년/반/학급 역할까지 가져오기)
     let user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -30,6 +31,9 @@ export default async function UserPage() {
             balance: true,
             role: true,
             email: true,
+            grade: true,
+            classRoom: true,
+            classRole: true,
         },
     });
 
@@ -49,6 +53,9 @@ export default async function UserPage() {
                 balance: true,
                 role: true,
                 email: true,
+                grade: true,
+                classRoom: true,
+                classRole: true,
             },
         });
     }
@@ -93,6 +100,11 @@ export default async function UserPage() {
         );
     }
 
+    const grade = user.grade ?? null;
+    const classRoom = user.classRoom ?? null;
+    const classRole = user.classRole ?? null;
+    const isPresident = classRole === "회장";
+
     // 🔽 여기부터는 일반 학생/선생님 지갑 화면
     return (
         <main className="max-w-2xl mx-auto px-4 py-8 space-y-10">
@@ -103,11 +115,28 @@ export default async function UserPage() {
                         {user.name}님 환영합니다.
                     </h1>
                     <p className="text-gray-700 text-sm">{user.email}</p>
+
+                    {/* 학급 정보 + 회장 뱃지 */}
+                    {grade && classRoom && (
+                        <p className="text-sm text-gray-200 mt-1">
+                            {grade}학년 {classRoom}반{" "}
+                            {classRole && (
+                                <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
+                  {classRole}
+                </span>
+                            )}
+                        </p>
+                    )}
                 </div>
 
                 {/* 상단 오른쪽 로그아웃 버튼 */}
                 <LogoutButton />
             </div>
+
+            {/* 회장인 경우 부스 비밀번호 변경 패널 */}
+            {isPresident && grade && classRoom && (
+                <ClassPresidentPanel grade={grade} classRoom={classRoom} />
+            )}
 
             {/* 잔액 카드 */}
             <section className="p-4 border rounded-lg shadow-sm bg-white space-y-2">

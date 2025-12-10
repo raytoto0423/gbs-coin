@@ -17,52 +17,59 @@ export async function POST(req: Request) {
         );
     }
 
-    const me = await prisma.user.findUnique({
-        where: { id: session.user.id },
-    });
+    const { user } = session;
 
-    if (!me) {
+    // 학생 회장만 허용 (필요하면 TEACHER도 허용 가능)
+    if (user.role !== "STUDENT") {
         return NextResponse.json(
-            { message: "사용자를 찾을 수 없습니다." },
-            { status: 404 }
-        );
-    }
-
-    // ✅ 회장만 허용
-    if (me.classRole !== "회장") {
-        return NextResponse.json(
-            { message: "학급 회장만 부스 비밀번호를 설정할 수 있습니다." },
+            { message: "학생 계정만 사용할 수 있습니다." },
             { status: 403 }
         );
     }
 
-    if (me.grade == null || me.classRoom == null) {
+    if (user.classRole !== "회장") {
         return NextResponse.json(
-            { message: "사용자의 학년/반 정보가 없습니다." },
+            { message: "학급 회장만 부스 비밀번호를 변경할 수 있습니다." },
+            { status: 403 }
+        );
+    }
+
+    const grade = user.grade;
+    const classRoom = user.classRoom;
+
+    if (!grade || !classRoom) {
+        return NextResponse.json(
+            { message: "학급 정보가 없습니다." },
             { status: 400 }
         );
     }
 
     const body = await req.json().catch(() => null);
-    const newPassword = (body?.password ?? "").trim();
+    const newPassword = body?.newPassword?.toString().trim() ?? "";
 
-    if (!newPassword || newPassword.length < 4) {
+    if (!newPassword) {
         return NextResponse.json(
-            { message: "비밀번호는 최소 4자 이상이어야 합니다." },
+            { message: "새 비밀번호를 입력해주세요." },
             { status: 400 }
         );
     }
 
-    const booth = await prisma.booth.findFirst({
-        where: {
-            grade: me.grade,
-            classRoom: me.classRoom,
-        },
+    if (newPassword.length < 4 || newPassword.length > 20) {
+        return NextResponse.json(
+            { message: "비밀번호는 4~20자 사이여야 합니다." },
+            { status: 400 }
+        );
+    }
+
+    const boothId = `${grade}-${classRoom}`;
+
+    const booth = await prisma.booth.findUnique({
+        where: { id: boothId },
     });
 
     if (!booth) {
         return NextResponse.json(
-            { message: "해당 반의 부스를 찾을 수 없습니다." },
+            { message: `${grade}학년 ${classRoom}반 부스를 찾을 수 없습니다.` },
             { status: 404 }
         );
     }
@@ -70,15 +77,15 @@ export async function POST(req: Request) {
     const hash = await bcrypt.hash(newPassword, 10);
 
     await prisma.booth.update({
-        where: { id: booth.id },
+        where: { id: boothId },
         data: {
             passwordHash: hash,
-            passwordPlain: newPassword, // 🔥 관리자 페이지에서 보여줄 값
+            passwordPlain: newPassword, // 관리자 페이지에서 확인용
         },
     });
 
     return NextResponse.json({
         ok: true,
-        message: "부스 비밀번호가 변경되었습니다.",
+        message: `${grade}학년 ${classRoom}반 부스 비밀번호가 변경되었습니다.`,
     });
 }
