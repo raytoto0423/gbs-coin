@@ -1,7 +1,9 @@
 // app/api/dev/seed-booths/route.ts
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+
+// 빌드 시에 이 라우트를 정적으로 건드리지 말라는 힌트
+export const dynamic = "force-dynamic";
 
 // 학년/반 목록
 const booths = [
@@ -22,39 +24,53 @@ const booths = [
     { id: "3-5", name: "3학년 5반" },
 ];
 
-export async function GET(request: Request) {
-    const url = new URL(request.url);
+// POST /api/dev/seed-booths?key=DEV_SEED_KEY
+export async function POST(req: NextRequest) {
+    // 🔒 운영 환경에서는 아예 막기
+    if (process.env.NODE_ENV === "production") {
+        return new NextResponse("Not allowed in production", { status: 403 });
+    }
+
+    // 🔑 간단한 키 체크 (env 에 DEV_SEED_KEY 가 있어야 함)
+    const url = new URL(req.url);
     const key = url.searchParams.get("key");
+    const expectedKey = process.env.DEV_SEED_KEY;
 
-    // 🔐 안전장치: 비밀 키 안 맞으면 거절
-    if (!key || key !== process.env.DEV_SEED_KEY) {
-        return NextResponse.json(
-            { message: "권한이 없습니다." },
-            { status: 401 }
-        );
+    if (!expectedKey || key !== expectedKey) {
+        return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const password = "1234";
-    const hash = await bcrypt.hash(password, 10);
+    // 🔁 Prisma 는 핸들러 안에서 동적 import → 모듈 로드시 DB 안 건드림
+    const { prisma } = await import("@/lib/prisma");
 
-    for (const b of booths) {
-        await prisma.booth.upsert({
-            where: { id: b.id },
-            update: {
-                name: b.name,
-                passwordHash: hash,
-            },
-            create: {
-                id: b.id,
-                name: b.name,
-                passwordHash: hash,
-            },
+    try {
+        // 부스 비밀번호 공통: 1234
+        const password = "1234";
+        const hash = await bcrypt.hash(password, 10);
+
+        // 각 반마다 upsert
+        for (const b of booths) {
+            await prisma.booth.upsert({
+                where: { id: b.id },
+                update: {
+                    name: b.name,
+                    passwordHash: hash,
+                },
+                create: {
+                    id: b.id,
+                    name: b.name,
+                    passwordHash: hash,
+                },
+            });
+        }
+
+        return NextResponse.json({
+            ok: true,
+            message: "부스 초기화 완료 (비밀번호 1234)",
+            count: booths.length,
         });
+    } catch (error) {
+        console.error("seed-booths error", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
     }
-
-    return NextResponse.json({
-        ok: true,
-        message: "부스 초기화 완료 (비밀번호 1234)",
-        count: booths.length,
-    });
 }
