@@ -161,6 +161,17 @@ export default async function UserPage() {
                 </div>
             </section>
 
+            {/* 문의하기 버튼 */}
+            <section className="flex justify-end">
+                <Link
+                    href="/user/inquiry"
+                    className="inline-block px-3 py-2 rounded-md bg-gray-700 text-white text-xs hover:bg-gray-600"
+                >
+                    관리자에게 문의하기
+                </Link>
+            </section>
+
+
             {/* 최근 거래 내역 */}
             <section>
                 <h2 className="text-lg font-semibold mb-3 text-gray-50">

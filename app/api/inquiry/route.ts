@@ -1,4 +1,4 @@
-// app/api/user/contact-admin/route.ts
+// app/api/inquiry/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -11,17 +11,17 @@ export async function POST(req: Request) {
 
     if (!session?.user) {
         return NextResponse.json(
-            { message: "로그인이 필요합니다." },
+            { error: "로그인이 필요합니다." },
             { status: 401 }
         );
     }
 
     const body = await req.json().catch(() => null);
-    const message = (body?.message ?? "").trim();
+    const message = (body?.message as string | undefined)?.trim();
 
     if (!message) {
         return NextResponse.json(
-            { message: "문의 내용을 입력해 주세요." },
+            { error: "문의 내용을 입력해 주세요." },
             { status: 400 }
         );
     }
@@ -33,8 +33,5 @@ export async function POST(req: Request) {
         },
     });
 
-    return NextResponse.json({
-        ok: true,
-        message: "관리자에게 문의가 전송되었습니다.",
-    });
+    return NextResponse.json({ ok: true });
 }

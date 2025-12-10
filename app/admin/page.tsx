@@ -5,6 +5,8 @@ import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 import AdminActions from "./AdminActions";
 import AdminUserActions from "./AdminUserActions";
+import AdminInquiries from "./AdminInquiries";
+
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
@@ -179,6 +181,8 @@ export default async function AdminPage() {
 
                 {/* 유저 잔액 관리 - 검색/선택/일괄 적용 */}
                 <AdminUserActions />
+
+                <AdminInquiries />
 
                 {/* 🔥 유저 잔액 관리 (전체 목록, 보기용) */}
                 <section>

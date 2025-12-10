@@ -1,4 +1,4 @@
-// app/api/admin/inquiries/route.ts
+// app/api/inquiry/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -6,39 +6,32 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-const ADMIN_EMAIL = "dhhwang423@gmail.com";
-
-export async function GET() {
+export async function POST(req: Request) {
     const session = await auth();
 
-    if (!session?.user || session.user.email !== ADMIN_EMAIL) {
+    if (!session?.user) {
         return NextResponse.json(
-            { message: "관리자만 접근할 수 있습니다." },
-            { status: 403 }
+            { error: "로그인이 필요합니다." },
+            { status: 401 }
         );
     }
 
-    const inquiries = await prisma.inquiry.findMany({
-        orderBy: { createdAt: "desc" },
-        select: {
-            id: true,
-            message: true,
-            createdAt: true,
-            sender: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    grade: true,
-                    classRoom: true,
-                    number: true,
-                },
-            },
+    const body = await req.json().catch(() => null);
+    const message = (body?.message as string | undefined)?.trim();
+
+    if (!message) {
+        return NextResponse.json(
+            { error: "문의 내용을 입력해 주세요." },
+            { status: 400 }
+        );
+    }
+
+    await prisma.inquiry.create({
+        data: {
+            senderId: session.user.id,
+            message,
         },
     });
 
-    return NextResponse.json({
-        ok: true,
-        inquiries,
-    });
+    return NextResponse.json({ ok: true });
 }
