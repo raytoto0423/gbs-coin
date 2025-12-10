@@ -230,7 +230,18 @@ export default async function UserPage() {
                             );
                         })}
                     </div>
+
                 )}
+                {/* 축제 메인 페이지 바로가기 */}
+                <a
+                    href="https://festival2-final.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition"
+                >
+                    <span>🎪</span>
+                    <span>축제 메인 페이지 바로가기</span>
+                </a>
             </section>
         </main>
     );

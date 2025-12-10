@@ -1,7 +1,7 @@
 // app/ranking/page.tsx
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
+import BackButton from "./BackButton";   // ✅ 새로 추가
 
 export default async function RankingPage() {
     const session = await auth();
@@ -20,15 +20,6 @@ export default async function RankingPage() {
 
     const role = (session.user as any).role ?? "USER";
 
-    const backHref =
-        role === "ADMIN" ? "/admin" : role === "BOOTH" ? "/booths" : "/user";
-    const backLabel =
-        role === "ADMIN"
-            ? "관리자 페이지로"
-            : role === "BOOTH"
-                ? "부스 페이지로"
-                : "내 정보로";
-
     const currentBoothId =
         role === "BOOTH"
             ? ((session.user as any).boothId ?? session.user.id)
@@ -39,19 +30,14 @@ export default async function RankingPage() {
             {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-50">
-                        반 부스 코인 순위
-                    </h1>
+                    <h1 className="text-2xl font-bold text-gray-50">반 부스 코인 순위</h1>
                     <p className="text-sm text-gray-700">
                         현재 기준 각 반 부스의 보유 코인 순위입니다.
                     </p>
                 </div>
-                <Link
-                    href={backHref}
-                    className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-900 hover:bg-gray-100"
-                >
-                    {backLabel}
-                </Link>
+
+                {/* 🔁 여기만 바뀜: 이전 화면으로 버튼 */}
+                <BackButton />
             </div>
 
             {/* 순위 테이블 */}
@@ -62,9 +48,7 @@ export default async function RankingPage() {
                         <th className="px-4 py-2 text-left text-gray-900">순위</th>
                         <th className="px-4 py-2 text-left text-gray-900">부스 ID</th>
                         <th className="px-4 py-2 text-left text-gray-900">반 이름</th>
-                        <th className="px-4 py-2 text-right text-gray-900">
-                            보유 코인
-                        </th>
+                        <th className="px-4 py-2 text-right text-gray-900">보유 코인</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -79,8 +63,7 @@ export default async function RankingPage() {
                         </tr>
                     ) : (
                         booths.map((b, idx) => {
-                            const isMyBooth =
-                                currentBoothId && b.id === currentBoothId;
+                            const isMyBooth = currentBoothId && b.id === currentBoothId;
 
                             const baseColor =
                                 idx === 0
@@ -91,9 +74,7 @@ export default async function RankingPage() {
                                             ? "bg-orange-50"
                                             : "";
 
-                            const rowClass = isMyBooth
-                                ? "bg-blue-50"
-                                : baseColor;
+                            const rowClass = isMyBooth ? "bg-blue-50" : baseColor;
 
                             return (
                                 <tr key={b.id} className={rowClass}>

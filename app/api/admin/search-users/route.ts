@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
             NOT: [
                 { email: ADMIN_EMAIL },
                 { role: "BOOTH" },
+                { email: { endsWith: "@booth.local" } },
             ],
             OR: [
                 { name: { contains: query } },
