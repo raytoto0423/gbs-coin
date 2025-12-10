@@ -10,7 +10,7 @@ const ADMIN_EMAIL = "dhhwang423@gmail.com";
 export default async function AdminPage() {
     const session = await auth();
 
-    // 🔐 관리자 이메일이 아니면 바로 차단
+    // 🔐 관리자만 접근 가능
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return (
             <main className="min-h-screen flex items-center justify-center px-4">
@@ -19,7 +19,7 @@ export default async function AdminPage() {
         );
     }
 
-    // DB에서 정보 가져오기
+    // 통계 + 부스 리스트 가져오기
     const [userCount, boothCount, txCount, booths] = await Promise.all([
         prisma.user.count(),
         prisma.booth.count(),
@@ -63,7 +63,7 @@ export default async function AdminPage() {
                     </div>
                 </header>
 
-                {/* 통계 카드 */}
+                {/* 간단 통계 카드 */}
                 <section className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-4">
                         <p className="text-xs text-slate-400">등록된 유저 수</p>
@@ -79,7 +79,7 @@ export default async function AdminPage() {
                     </div>
                 </section>
 
-                {/* 관리자 액션 (잔액 초기화 + 부스 송금) */}
+                {/* 관리자 액션 (잔액 초기화 + 부스 잔액 조정) */}
                 <AdminActions />
 
                 {/* 부스 목록 + 비밀번호 표시 */}
@@ -87,7 +87,7 @@ export default async function AdminPage() {
                     <h2 className="text-lg font-semibold mb-3">부스 목록 및 비밀번호</h2>
                     <p className="text-xs text-slate-400 mb-2">
                         비밀번호는 <span className="font-mono">passwordPlain</span> 컬럼에 표시됩니다.
-                        (초기 시드 값은 1234, 회장이 변경하면 여기 값도 바뀝니다.)
+                        (초기값 1234, 회장이 변경하면 여기 값도 같이 바뀝니다.)
                     </p>
 
                     <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/60">
@@ -127,8 +127,8 @@ export default async function AdminPage() {
                                         colSpan={6}
                                         className="px-3 py-4 text-center text-slate-500"
                                     >
-                                        등록된 부스가 없습니다. /api/dev/seed-booths 로 시드 후
-                                        다시 확인해 주세요.
+                                        등록된 부스가 없습니다. /api/dev/seed-booths 실행 후 다시
+                                        확인해 주세요.
                                     </td>
                                 </tr>
                             )}
