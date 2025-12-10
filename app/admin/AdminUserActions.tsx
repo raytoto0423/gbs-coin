@@ -203,7 +203,7 @@ export default function AdminUserActions() {
                     <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="예: 동현 / 지민 (이름 전체 또는 일부)"
+                        placeholder="예: 북곽 / 북순 (이름 전체 또는 일부)"
                         className="flex-1 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-50 outline-none focus:border-emerald-400"
                     />
                     <button
