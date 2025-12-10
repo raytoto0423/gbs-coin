@@ -1,11 +1,12 @@
 // app/api/dev/seed-booths/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
-// 빌드 시에 이 라우트를 정적으로 건드리지 말라는 힌트
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// 학년/반 목록
+// 학년/반 목록 (기존 로직 그대로 유지)
 const booths = [
     { id: "1-1", name: "1학년 1반" },
     { id: "1-2", name: "1학년 2반" },
@@ -24,42 +25,44 @@ const booths = [
     { id: "3-5", name: "3학년 5반" },
 ];
 
-// POST /api/dev/seed-booths?key=DEV_SEED_KEY
-export async function POST(req: NextRequest) {
-    // 🔒 운영 환경에서는 아예 막기
-    if (process.env.NODE_ENV === "production") {
-        return new NextResponse("Not allowed in production", { status: 403 });
-    }
-
-    // 🔑 간단한 키 체크 (env 에 DEV_SEED_KEY 가 있어야 함)
+// 실제 시드 로직을 함수로 묶어두고 GET/POST 둘 다에서 호출
+async function runSeed(req: Request) {
     const url = new URL(req.url);
     const key = url.searchParams.get("key");
-    const expectedKey = process.env.DEV_SEED_KEY;
 
-    if (!expectedKey || key !== expectedKey) {
+    // 🔑 .env 의 DEV_SEED_KEY (없으면 기존 값과 맞춰서 기본값)
+    const expectedKey = process.env.DEV_SEED_KEY ?? "gbs-seed-1234";
+
+    if (key !== expectedKey) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // 🔁 Prisma 는 핸들러 안에서 동적 import → 모듈 로드시 DB 안 건드림
-    const { prisma } = await import("@/lib/prisma");
-
     try {
-        // 부스 비밀번호 공통: 1234
         const password = "1234";
         const hash = await bcrypt.hash(password, 10);
 
-        // 각 반마다 upsert
         for (const b of booths) {
+            const [gradeStr, classStr] = b.id.split("-");
+            const grade = Number(gradeStr);
+            const classRoom = Number(classStr);
+
             await prisma.booth.upsert({
                 where: { id: b.id },
                 update: {
                     name: b.name,
                     passwordHash: hash,
+                    passwordPlain: password, // 🔥 관리자용 평문
+                    grade,
+                    classRoom,
                 },
                 create: {
                     id: b.id,
                     name: b.name,
                     passwordHash: hash,
+                    passwordPlain: password, // 🔥 관리자용 평문
+                    grade,
+                    classRoom,
+                    balance: 0,
                 },
             });
         }
@@ -73,4 +76,13 @@ export async function POST(req: NextRequest) {
         console.error("seed-booths error", error);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
+}
+
+// 🔥 이제 GET / POST 둘 다 허용 (405 안 뜸)
+export async function GET(req: Request) {
+    return runSeed(req);
+}
+
+export async function POST(req: Request) {
+    return runSeed(req);
 }

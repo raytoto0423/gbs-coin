@@ -58,19 +58,48 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 password: { label: "비밀번호", type: "password" },
             },
             async authorize(credentials) {
-                const boothId = credentials?.boothId as string | undefined;
-                const password = credentials?.password as string | undefined;
+                const boothId = credentials?.boothId?.toString().trim();
+                const password = credentials?.password?.toString() ?? "";
 
-                if (!boothId || !password) return null;
+                console.log("[booth-login] 시도 boothId =", boothId);
+
+                if (!boothId || !password) {
+                    console.log("[booth-login] boothId 또는 password 없음");
+                    return null;
+                }
 
                 const booth = await prisma.booth.findUnique({
                     where: { id: boothId },
                 });
-                if (!booth) return null;
+
+                if (!booth) {
+                    console.log("[booth-login] 해당 부스를 찾을 수 없음");
+                    return null;
+                }
 
                 const bcrypt = await import("bcryptjs");
-                const ok = await bcrypt.compare(password, booth.passwordHash);
-                if (!ok) return null;
+
+                let ok = false;
+
+                try {
+                    // 1) bcrypt 해시 비교
+                    ok = await bcrypt.compare(password, booth.passwordHash);
+                } catch (e) {
+                    console.error("[booth-login] bcrypt.compare 에러", e);
+                }
+
+                // 2) 혹시 DB에 평문 1234가 들어있다면 이것도 임시 허용
+                if (!ok && booth.passwordPlain && password === booth.passwordPlain) {
+                    console.log("[booth-login] 평문 비밀번호가 DB 값과 일치 (임시 허용)");
+                    ok = true;
+                }
+
+                if (!ok) {
+                    console.log("[booth-login] 비밀번호 불일치: 입력 =", password, " / DB =", booth.passwordPlain);
+                    return null;
+                }
+
+                console.log("[booth-login] 로그인 성공:", booth.id);
 
                 return {
                     id: booth.id,
