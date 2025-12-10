@@ -97,7 +97,7 @@ export default async function AdminPage() {
                 {/* 🔥 관리자 액션 (전체 잔액 초기화 + 부스 잔액 조정 등) */}
                 <AdminActions />
 
-                {/* 🔥 유저 개별 잔액 조정 폼 */}
+
                 <AdminUserActions />
 
                 {/* 📌 유저 잔액 관리 섹션 */}
