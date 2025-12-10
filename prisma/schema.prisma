@@ -99,4 +99,9 @@ model Inquiry {
   senderId  String
   message   String
   createdAt DateTime @default(now())
+
+  // 🔽 관리자 답변 관련 필드들 (선택사항)
+  replyMessage  String?
+  repliedAt     DateTime?
+  repliedByEmail String?
 }
