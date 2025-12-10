@@ -35,7 +35,7 @@ export default function UserLoginPage() {
 
                 {/* 🔹 부스 로그인으로 가는 버튼 */}
                 <div className="space-y-2">
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-gray-50">
                         반 부스 담당자는 부스 전용 로그인 페이지를 이용해 주세요.
                     </p>
                     <Link
@@ -72,19 +72,19 @@ export default function UserLoginPage() {
                     >
                         {loading ? "로그인 중..." : "구글 계정으로 로그인"}
                     </button>
-
                 )}
+
+                {/* 🎪 축제 메인 페이지 바로가기 버튼 (카드 안, 맨 아래로 이동) */}
+                <a
+                    href="https://festival2-final.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition"
+                >
+                    <span>🎪</span>
+                    <span>축제 메인 페이지 바로가기</span>
+                </a>
             </div>
-            <a
-                href="https://festival2-final.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition"
-            >
-                <span>🎪</span>
-                <span>축제 메인 페이지 바로가기</span>
-            </a>
         </main>
     );
 }
-

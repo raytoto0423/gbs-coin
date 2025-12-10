@@ -24,3 +24,10 @@ body {
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
 }
+.drop-shadow-custom {
+    text-shadow:
+            -2px -2px 0 #111827,
+            2px -2px 0 #111827,
+            -2px  2px 0 #111827,
+            2px  2px 0 #111827;
+}

@@ -86,7 +86,7 @@ export default async function UserPage() {
     if (isAdminAccount) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-50">
                     관리자 계정입니다.
                 </h1>
                 <p className="text-sm text-gray-700 text-center">
@@ -114,7 +114,7 @@ export default async function UserPage() {
             {/* 헤더 */}
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-50">
+                    <h1 className="text-2xl font-bold text-gray-50 drop-shadow-custom">
                         {user.name}님 환영합니다.
                     </h1>
                     <p className="text-gray-400 text-sm">{user.email}</p>
@@ -176,7 +176,7 @@ export default async function UserPage() {
 
             {/* 최근 거래내역 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3 text-gray-50">
+                <h2 className="text-lg font-semibold mb-3 text-gray-50 drop-shadow-custom">
                     최근 거래 내역
                 </h2>
 
