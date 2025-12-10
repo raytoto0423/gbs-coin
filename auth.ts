@@ -40,6 +40,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             checks: ["none"],
+
+            // ✅ 여기만 새로 추가: 매번 구글 계정 선택창 띄우기
+            authorization: {
+                params: {
+                    prompt: "select_account",
+                },
+            },
         }),
 
         // 2) 부스 로그인 (부스 ID + 비밀번호)
@@ -86,7 +93,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             },
             async authorize(credentials) {
                 const email = credentials?.email as string | undefined;
-                const roleInput = (credentials?.role as string | undefined)?.toUpperCase() ?? "";
+                const roleInput =
+                    (credentials?.role as string | undefined)?.toUpperCase() ?? "";
 
                 if (!email) return null;
 
@@ -174,7 +182,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             const t: any = token;
 
             if (user && account) {
-                if (account.provider === "google" || account.provider === "dev-user") {
+                if (
+                    account.provider === "google" ||
+                    account.provider === "dev-user"
+                ) {
                     const dbUser = await prisma.user.findUnique({
                         where: { email: user.email! },
                     });
