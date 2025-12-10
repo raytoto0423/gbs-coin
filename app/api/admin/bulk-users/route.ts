@@ -1,16 +1,21 @@
 // app/api/admin/bulk-users/route.ts
-export const runtime = "nodejs";          // ✅ Prisma는 Node 런타임에서만
-export const dynamic = "force-dynamic";   // ✅ 항상 동적 처리
 
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";          // ✅ Prisma는 Node 런타임에서만
+export const dynamic = "force-dynamic";   // ✅ 항상 동적 처리
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
 type BulkMode = "SET" | "ADD" | "CLEAR";
 
 export async function POST(req: Request) {
+    // 🔥 여기서만 auth / prisma 동적 import (빌드 타임에는 실행 X)
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma"),
+    ]);
+
     const session = await auth();
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return NextResponse.json(
@@ -81,7 +86,7 @@ export async function POST(req: Request) {
             },
         });
 
-        // 음수로 내려가는 경우 방지하고 싶다면 여기에서 한 번 더 처리 필요 (지금은 허용)
+        // 음수 방지는 지금 로직상 허용 (필요하면 여기서 한 번 더 체크 가능)
     } else if (mode === "CLEAR") {
         await prisma.user.updateMany({
             where: { id: { in: targets.map((u) => u.id) } },
