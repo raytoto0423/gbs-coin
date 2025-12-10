@@ -8,9 +8,10 @@ import { prisma } from "@/lib/prisma";
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
-export async function POST(_req: Request) {
+export async function POST() {
     const session = await auth();
 
+    // 🔐 관리자만 실행 가능
     if (!session?.user || session.user.email !== ADMIN_EMAIL) {
         return NextResponse.json(
             { message: "관리자만 사용할 수 있습니다." },
@@ -28,6 +29,9 @@ export async function POST(_req: Request) {
         });
     } catch (error) {
         console.error("reset-transactions error", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
+        return NextResponse.json(
+            { message: "서버 오류가 발생했습니다." },
+            { status: 500 }
+        );
     }
 }
