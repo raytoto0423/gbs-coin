@@ -3,22 +3,39 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function BoothLoginPage() {
     const [boothId, setBoothId] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        await signIn("booth-login", {
-            redirectTo: "/booth",
+        setError(null);
+
+        // ✅ redirect: false → 성공/실패를 직접 확인
+        const res = await signIn("booth-login", {
+            redirect: false,
             boothId,
             password,
         });
+
         setLoading(false);
+
+        if (res?.error) {
+            // CredentialsSignin 같은 에러 코드가 들어옴
+            setError("부스 ID 또는 비밀번호가 올바르지 않습니다.");
+            return;
+        }
+
+        // ✅ 로그인 성공 시에만 /booth로 이동
+        router.push("/booth");
     };
 
     return (
@@ -35,7 +52,6 @@ export default function BoothLoginPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        {/* 🔻 hover:bg-... 제거 */}
                         <label className="block text-sm font-medium mb-1 text-gray-900">
                             부스 ID (예: 1-1, 2-3)
                         </label>
@@ -48,7 +64,6 @@ export default function BoothLoginPage() {
                     </div>
 
                     <div>
-                        {/* 🔻 hover:bg-... 제거 */}
                         <label className="block text-sm font-medium mb-1 text-gray-900">
                             비밀번호
                         </label>
@@ -60,6 +75,12 @@ export default function BoothLoginPage() {
                             required
                         />
                     </div>
+
+                    {error && (
+                        <p className="text-sm text-red-600">
+                            {error}
+                        </p>
+                    )}
 
                     <button
                         type="submit"
