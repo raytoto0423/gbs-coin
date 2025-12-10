@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            // 최신 유저/부스 정보 조회 (학년/반 포함)
+            // 최신 유저/부스 정보 조회
             const user = await tx.user.findUnique({
                 where: { id: userId },
             });
@@ -62,34 +62,46 @@ export async function POST(request: Request) {
                 throw new Error("USER_OR_BOOTH_NOT_FOUND");
             }
 
-            // 🔒 자기 반 부스 결제 막기 (PAY일 때만)
-            if (type === "PAY") {
-                const userGrade = user.grade ?? null;
-                const userClassRoom = user.classRoom ?? null;
+            // 🔒 1) 세션 기준 학년/반 정보
+            const sessionGrade = (session.user as any).grade ?? null;
+            const sessionClassRoom = (session.user as any).classRoom ?? null;
 
-                let boothGrade = booth.grade ?? null;
-                let boothClassRoom = booth.classRoom ?? null;
+            // 🔒 2) DB 기준 학년/반 정보
+            const dbGrade = user.grade ?? null;
+            const dbClassRoom = user.classRoom ?? null;
 
-                // 부스에 grade/classRoom이 안 채워져 있으면 id에서 추론 (예: "1-3")
-                if (boothGrade == null || boothClassRoom == null) {
-                    const m = booth.id.match(/^(\d+)-(\d+)$/);
-                    if (m) {
-                        boothGrade = parseInt(m[1], 10);
-                        boothClassRoom = parseInt(m[2], 10);
-                    }
+            // 🔒 3) 부스 학년/반 정보 (grade/classRoom이 없으면 id에서 추론: "1-3" → 1,3)
+            let boothGrade = booth.grade ?? null;
+            let boothClassRoom = booth.classRoom ?? null;
+
+            if (boothGrade == null || boothClassRoom == null) {
+                const m = booth.id.match(/^(\d+)-(\d+)$/);
+                if (m) {
+                    boothGrade = parseInt(m[1], 10);
+                    boothClassRoom = parseInt(m[2], 10);
                 }
+            }
 
-                if (
-                    userGrade != null &&
-                    userClassRoom != null &&
-                    boothGrade != null &&
-                    boothClassRoom != null &&
-                    userGrade === boothGrade &&
-                    userClassRoom === boothClassRoom
-                ) {
-                    // 동일 학년/반 부스 → 결제 금지
-                    throw new Error("SAME_CLASS_PAYMENT_FORBIDDEN");
-                }
+            // 🔥 자기 반 부스인지 판정 (세션 정보 > DB 정보 순으로 사용)
+            const sameClassBySession =
+                sessionGrade != null &&
+                sessionClassRoom != null &&
+                boothGrade != null &&
+                boothClassRoom != null &&
+                sessionGrade === boothGrade &&
+                sessionClassRoom === boothClassRoom;
+
+            const sameClassByDb =
+                dbGrade != null &&
+                dbClassRoom != null &&
+                boothGrade != null &&
+                boothClassRoom != null &&
+                dbGrade === boothGrade &&
+                dbClassRoom === boothClassRoom;
+
+            if (type === "PAY" && (sameClassBySession || sameClassByDb)) {
+                // 동일 학년/반 부스 → 결제 금지
+                throw new Error("SAME_CLASS_PAYMENT_FORBIDDEN");
             }
 
             // 💸 실제 잔액 이동 로직
