@@ -38,7 +38,7 @@ export default async function AdminPage() {
                 where: {
                     AND: [
                         { email: { not: ADMIN_EMAIL } },   // 관리자 제외
-                        { role:  { not: "BOOTH" } },       // 부스 역할 제외 (혹시라도 User 테이블에 있을 경우)
+                        { role:  { endsWith: "@booth.local" } },       // 부스 역할 제외 (혹시라도 User 테이블에 있을 경우)
                     ],
                 },
                 orderBy: [{ grade: "asc" }, { classRoom: "asc" }, { name: "asc" }],
