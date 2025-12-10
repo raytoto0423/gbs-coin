@@ -35,6 +35,9 @@ export default async function AdminPage() {
     const [users, userCount, boothCount, txCount, booths, transactions] =
         await Promise.all([
             prisma.user.findMany({
+                where: {
+                    NOT: { email: "dhhwang423@gmail.com" }, // admin 제외
+                },
                 orderBy: [{ grade: "asc" }, { classRoom: "asc" }, { name: "asc" }],
                 select: {
                     id: true,
