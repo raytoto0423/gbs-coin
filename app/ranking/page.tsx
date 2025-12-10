@@ -21,7 +21,7 @@ export default async function RankingPage() {
     const role = (session.user as any).role ?? "USER";
 
     const backHref =
-        role === "ADMIN" ? "/admin" : role === "BOOTH" ? "/booth" : "/user";
+        role === "ADMIN" ? "/admin" : role === "BOOTH" ? "/booths" : "/user";
     const backLabel =
         role === "ADMIN"
             ? "관리자 페이지로"

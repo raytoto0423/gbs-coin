@@ -1,10 +1,10 @@
-// app/api/booth/activities/route.ts
+// app/api/booths/activities/route.ts
 import { NextResponse } from "next/server";
 
 // 빌드 시에 이 라우트를 정적으로 다루지 않게 힌트
 export const dynamic = "force-dynamic";
 
-// GET /api/booth/activities
+// GET /api/booths/activities
 // 현재 부스의 활동 목록 조회
 export async function GET() {
     // auth, prisma 는 핸들러 안에서 동적 import (빌드 시 DB/NextAuth 실행 방지)
@@ -28,7 +28,7 @@ export async function GET() {
     return NextResponse.json({ activities });
 }
 
-// POST /api/booth/activities
+// POST /api/booths/activities
 // 활동 추가 (title, price, type = "PAY" | "REWARD")
 export async function POST(request: Request) {
     const [{ auth }, { prisma }] = await Promise.all([
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ activity }, { status: 201 });
 }
 
-// DELETE /api/booth/activities?id=...
+// DELETE /api/booths/activities?id=...
 // 해당 부스의 특정 활동 삭제
 export async function DELETE(request: Request) {
     const [{ auth }, { prisma }] = await Promise.all([

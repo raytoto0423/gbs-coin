@@ -1,4 +1,4 @@
-// app/booth/BoothDashboard.tsx
+// app/booths/BoothDashboard.tsx
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";

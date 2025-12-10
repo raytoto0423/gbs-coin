@@ -1,4 +1,4 @@
-// app/booth/page.tsx
+// app/booths/page.tsx
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import BoothDashboard from "./BoothDashboard";

@@ -49,7 +49,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         // 2) 부스 로그인 (부스 ID + 비밀번호)
         Credentials({
-            id: "booth-login",
+            id: "booths-login",
             name: "Booth Login",
             credentials: {
                 boothId: { label: "부스 ID", type: "text" },
@@ -59,7 +59,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 const boothId = credentials?.boothId?.toString().trim();
                 const password = credentials?.password?.toString() ?? "";
 
-                console.log("[booth-login] 시도 boothId =", boothId);
+                console.log("[booths-login] 시도 boothId =", boothId);
 
                 if (!boothId || !password) return null;
 
@@ -68,7 +68,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 });
 
                 if (!booth) {
-                    console.log("[booth-login] 부스 없음");
+                    console.log("[booths-login] 부스 없음");
                     return null;
                 }
 
@@ -78,7 +78,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 try {
                     ok = await bcrypt.compare(password, booth.passwordHash);
                 } catch (e) {
-                    console.error("[booth-login] bcrypt.compare 에러", e);
+                    console.error("[booths-login] bcrypt.compare 에러", e);
                 }
 
                 // passwordPlain 이 있을 경우 임시 허용
@@ -87,11 +87,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 }
 
                 if (!ok) {
-                    console.log("[booth-login] 비밀번호 불일치");
+                    console.log("[booths-login] 비밀번호 불일치");
                     return null;
                 }
 
-                console.log("[booth-login] 로그인 성공:", booth.id);
+                console.log("[booths-login] 로그인 성공:", booth.id);
 
                 return {
                     id: booth.id,
@@ -224,7 +224,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                         t.classRoom = dbUser.classRoom ?? null;
                         t.classRole = dbUser.classRole ?? null;
                     }
-                } else if (account.provider === "booth-login") {
+                } else if (account.provider === "booths-login") {
                     t.userId = (user as any).id;
                     t.role = "BOOTH";
                     t.boothId = (user as any).boothId ?? (user as any).id;

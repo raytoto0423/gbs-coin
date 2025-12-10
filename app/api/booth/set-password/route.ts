@@ -1,4 +1,4 @@
-// app/api/booth/set-password/route.ts
+// app/api/booths/set-password/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

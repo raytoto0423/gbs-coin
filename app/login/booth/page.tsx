@@ -1,4 +1,4 @@
-// app/login/booth/page.tsx
+// app/login/booths/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -20,7 +20,7 @@ export default function BoothLoginPage() {
         setError(null);
 
         // ✅ redirect: false → 성공/실패를 직접 확인
-        const res = await signIn("booth-login", {
+        const res = await signIn("booths-login", {
             redirect: false,
             boothId,
             password,

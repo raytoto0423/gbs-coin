@@ -1,4 +1,4 @@
-// app/booth/qr/[id]/page.tsx
+// app/booths/qr/[id]/page.tsx
 // @ts-nocheck   // 🔥 이 줄 추가
 
 import { prisma } from "@/lib/prisma";
