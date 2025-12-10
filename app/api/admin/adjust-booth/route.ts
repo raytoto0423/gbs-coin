@@ -1,51 +1,65 @@
 // app/api/admin/adjust-booth/route.ts
-export const runtime = "nodejs";          // ✅ Prisma는 Node 런타임에서만
-export const dynamic = "force-dynamic";   // ✅ 항상 동적 처리
+import { NextRequest, NextResponse } from "next/server";
 
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic"; // 빌드 시 프리렌더/모듈 실행 방지
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    // Prisma / Auth 는 빌드 시 실행되면 안 되므로 핸들러 안에서 import
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma"),
+    ]);
+
     const session = await auth();
+
+    // 🔐 관리자 권한 체크
     if (!session?.user || session.user.role !== "ADMIN") {
-        return NextResponse.json({ error: "관리자만 사용할 수 있습니다." }, { status: 401 });
+        return NextResponse.json({ message: "관리자 권한이 필요합니다." }, { status: 403 });
     }
 
-    const body = await req.json().catch(() => null) as {
-        boothId?: string;
-        delta?: number;
-    } | null;
-
-    if (!body?.boothId || typeof body.delta !== "number") {
-        return NextResponse.json({ error: "boothId와 delta가 필요합니다." }, { status: 400 });
+    // body 파싱
+    const body = await req.json().catch(() => null);
+    if (!body) {
+        return NextResponse.json({ message: "잘못된 요청입니다." }, { status: 400 });
     }
 
-    const booth = await prisma.booth.findUnique({ where: { id: body.boothId } });
+    const { boothId, amount, type } = body;
+    // type: "INCREASE" | "DECREASE"
+    // amount: number
+
+    if (!boothId || typeof amount !== "number") {
+        return NextResponse.json(
+            { message: "boothId와 amount가 필요합니다." },
+            { status: 400 }
+        );
+    }
+
+    // 부스 존재 확인
+    const booth = await prisma.booth.findUnique({ where: { id: boothId } });
     if (!booth) {
-        return NextResponse.json({ error: "해당 부스를 찾을 수 없습니다." }, { status: 404 });
+        return NextResponse.json({ message: "부스를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const newBalance = booth.balance + body.delta;
-    if (newBalance < 0) {
-        return NextResponse.json({ error: "잔액이 음수가 될 수 없습니다." }, { status: 400 });
+    // 처리
+    try {
+        const updated = await prisma.booth.update({
+            where: { id: boothId },
+            data:
+                type === "DECREASE"
+                    ? { balance: booth.balance - amount }
+                    : { balance: booth.balance + amount },
+        });
+
+        return NextResponse.json({
+            ok: true,
+            message: "부스 잔액이 수정되었습니다.",
+            booth: updated,
+        });
+    } catch (error) {
+        console.error("adjust-booth error", error);
+        return NextResponse.json(
+            { message: "부스 잔액 수정 중 오류가 발생했습니다." },
+            { status: 500 }
+        );
     }
-
-    const updated = await prisma.booth.update({
-        where: { id: booth.id },
-        data: { balance: newBalance },
-    });
-
-    // 필요하면 부스용 Transaction 로그도 남김
-    await prisma.transaction.create({
-        data: {
-            fromUserId: null,
-            toUserId: null,
-            toBoothId: booth.id,
-            amount: body.delta,
-            title: body.delta > 0 ? "관리자 부스 충전" : "관리자 부스 차감",
-        },
-    });
-
-    return NextResponse.json({ ok: true, balance: updated.balance });
 }
