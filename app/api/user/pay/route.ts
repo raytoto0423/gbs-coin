@@ -1,20 +1,31 @@
 // app/api/user/pay/route.ts
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function POST(request: Request) {
+// 빌드 타임에서 프리렌더/모듈 실행 방지
+export const dynamic = "force-dynamic";
+
+export async function POST(request: NextRequest) {
+    // ⚠ Prisma / Auth 는 동적 import → 빌드 시 실행되지 않음
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma")
+    ]);
+
     const session = await auth();
 
     if (!session?.user) {
         return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    // 부스 계정은 결제자가 될 수 없음
+    // 부스 계정은 결제 불가
     if (session.user.role === "BOOTH") {
-        return NextResponse.json({ message: "부스 계정은 결제할 수 없습니다." }, { status: 403 });
+        return NextResponse.json(
+            { message: "부스 계정은 결제할 수 없습니다." },
+            { status: 403 }
+        );
     }
 
+    // BODY 파싱
     const body = await request.json().catch(() => null);
     if (!body || !body.activityId) {
         return NextResponse.json({ message: "activityId가 필요합니다." }, { status: 400 });
@@ -22,9 +33,10 @@ export async function POST(request: Request) {
 
     const activityId = body.activityId as string;
 
+    // 활동 정보 조회
     const activity = await prisma.activity.findUnique({
         where: { id: activityId },
-        include: { booth: true },
+        include: { booth: true }
     });
 
     if (!activity || !activity.booth) {
@@ -38,7 +50,6 @@ export async function POST(request: Request) {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            // 최신 유저/부스 정보 조회
             const user = await tx.user.findUnique({ where: { id: userId } });
             const booth = await tx.booth.findUnique({ where: { id: boothId } });
 
@@ -47,19 +58,19 @@ export async function POST(request: Request) {
             }
 
             if (type === "PAY") {
-                // 학생/선생님 → 부스
+                // 학생/선생님 → 부스 결제
                 if (user.balance < price) {
                     throw new Error("INSUFFICIENT_USER_BALANCE");
                 }
 
                 await tx.user.update({
                     where: { id: userId },
-                    data: { balance: user.balance - price },
+                    data: { balance: user.balance - price }
                 });
 
                 await tx.booth.update({
                     where: { id: boothId },
-                    data: { balance: booth.balance + price },
+                    data: { balance: booth.balance + price }
                 });
 
                 await tx.transaction.create({
@@ -68,24 +79,23 @@ export async function POST(request: Request) {
                         title: activity.title,
                         fromUserId: userId,
                         toBoothId: boothId,
-                        activityId: activity.id,
-                    },
+                        activityId: activity.id
+                    }
                 });
             } else {
-                // types === "REWARD"
-                // 부스 → 학생/선생님
+                // REWARD — 부스 → 학생/선생님 지급
                 if (booth.balance < price) {
                     throw new Error("INSUFFICIENT_BOOTH_BALANCE");
                 }
 
                 await tx.booth.update({
                     where: { id: boothId },
-                    data: { balance: booth.balance - price },
+                    data: { balance: booth.balance - price }
                 });
 
                 await tx.user.update({
                     where: { id: userId },
-                    data: { balance: user.balance + price },
+                    data: { balance: user.balance + price }
                 });
 
                 await tx.transaction.create({
@@ -94,36 +104,32 @@ export async function POST(request: Request) {
                         title: activity.title,
                         fromBoothId: boothId,
                         toUserId: userId,
-                        activityId: activity.id,
-                    },
+                        activityId: activity.id
+                    }
                 });
             }
 
-            return {
-                userBalanceAfter:
-                    type === "PAY" ? undefined : undefined, // 필요하면 나중에 더 넣자
-            };
+            return { ok: true };
         });
 
         return NextResponse.json({
             ok: true,
             message: type === "PAY" ? "결제가 완료되었습니다." : "코인이 지급되었습니다.",
-            ...result,
+            ...result
         });
     } catch (e: any) {
-        if (e instanceof Error) {
-            if (e.message === "INSUFFICIENT_USER_BALANCE") {
-                return NextResponse.json(
-                    { message: "학생/선생님의 잔액이 부족합니다." },
-                    { status: 400 }
-                );
-            }
-            if (e.message === "INSUFFICIENT_BOOTH_BALANCE") {
-                return NextResponse.json(
-                    { message: "부스 잔액이 부족합니다." },
-                    { status: 400 }
-                );
-            }
+        if (e.message === "INSUFFICIENT_USER_BALANCE") {
+            return NextResponse.json(
+                { message: "학생/선생님의 잔액이 부족합니다." },
+                { status: 400 }
+            );
+        }
+
+        if (e.message === "INSUFFICIENT_BOOTH_BALANCE") {
+            return NextResponse.json(
+                { message: "부스 잔액이 부족합니다." },
+                { status: 400 }
+            );
         }
 
         console.error("pay error", e);
