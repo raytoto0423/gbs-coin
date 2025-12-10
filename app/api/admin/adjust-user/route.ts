@@ -1,52 +1,88 @@
 // app/api/admin/adjust-user/route.ts
-export const runtime = "nodejs";          // ✅ Prisma는 Node 런타임에서만
-export const dynamic = "force-dynamic";   // ✅ 항상 동적 처리
+import { NextRequest, NextResponse } from "next/server";
 
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic"; // 빌드 타임 프리렌더/모듈 실행 방지
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    // ⚠️ Prisma / Auth 는 핸들러 안에서만 동적 import
+    const [{ auth }, { prisma }] = await Promise.all([
+        import("@/auth"),
+        import("@/lib/prisma"),
+    ]);
+
     const session = await auth();
+
+    // 관리자만 접근 가능
     if (!session?.user || session.user.role !== "ADMIN") {
-        return NextResponse.json({ error: "관리자만 사용할 수 있습니다." }, { status: 401 });
+        return NextResponse.json(
+            { message: "관리자 권한이 필요합니다." },
+            { status: 403 }
+        );
     }
 
-    const body = await req.json().catch(() => null) as {
+    const body = await req.json().catch(() => null);
+    if (!body) {
+        return NextResponse.json(
+            { message: "잘못된 요청입니다." },
+            { status: 400 }
+        );
+    }
+
+    const { userId, amount, type } = body as {
         userId?: string;
-        delta?: number;
-    } | null;
+        amount?: number;
+        type?: "INCREASE" | "DECREASE";
+    };
 
-    if (!body?.userId || typeof body.delta !== "number") {
-        return NextResponse.json({ error: "userId와 delta가 필요합니다." }, { status: 400 });
+    if (!userId || typeof amount !== "number") {
+        return NextResponse.json(
+            { message: "userId와 amount가 필요합니다." },
+            { status: 400 }
+        );
     }
 
-    const user = await prisma.user.findUnique({ where: { id: body.userId } });
+    if (type !== "INCREASE" && type !== "DECREASE") {
+        return NextResponse.json(
+            { message: "type은 INCREASE 또는 DECREASE 여야 합니다." },
+            { status: 400 }
+        );
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
     if (!user) {
-        return NextResponse.json({ error: "해당 유저를 찾을 수 없습니다." }, { status: 404 });
+        return NextResponse.json(
+            { message: "해당 사용자를 찾을 수 없습니다." },
+            { status: 404 }
+        );
     }
 
-    const newBalance = user.balance + body.delta;
-    // 음수 허용 여부는 정책에 따라
+    const newBalance =
+        type === "INCREASE" ? user.balance + amount : user.balance - amount;
+
     if (newBalance < 0) {
-        return NextResponse.json({ error: "잔액이 음수가 될 수 없습니다." }, { status: 400 });
+        return NextResponse.json(
+            { message: "잔액이 음수가 될 수 없습니다." },
+            { status: 400 }
+        );
     }
 
-    const updated = await prisma.user.update({
-        where: { id: user.id },
-        data: { balance: newBalance },
-    });
+    try {
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: { balance: newBalance },
+        });
 
-    // 선택: Transaction 로그도 남기고 싶으면 (스키마에 맞게 수정)
-    await prisma.transaction.create({
-        data: {
-            fromUserId: null, // 관리자
-            toUserId: user.id,
-            toBoothId: null,
-            amount: body.delta,
-            title: body.delta > 0 ? "관리자 충전" : "관리자 차감",
-        },
-    });
-
-    return NextResponse.json({ ok: true, balance: updated.balance });
+        return NextResponse.json({
+            ok: true,
+            message: "사용자 잔액이 수정되었습니다.",
+            user: updated,
+        });
+    } catch (error) {
+        console.error("adjust-user error", error);
+        return NextResponse.json(
+            { message: "사용자 잔액 수정 중 오류가 발생했습니다." },
+            { status: 500 }
+        );
+    }
 }
