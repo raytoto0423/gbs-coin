@@ -39,6 +39,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            checks: ["state"],
         }),
 
         // 2) 부스 로그인 (부스 ID + 비밀번호)
