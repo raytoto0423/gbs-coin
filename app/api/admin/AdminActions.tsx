@@ -18,7 +18,7 @@ async function callApi(url: string, options?: RequestInit) {
     }
 
     if (!res.ok) {
-        throw new Error(data.message || `요청 실패 (${res.status})`);
+        throw new Error(data.message || data.error || `요청 실패 (${res.status})`);
     }
     return data;
 }
@@ -28,7 +28,6 @@ export default function AdminActions() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // 부스 잔액 조정용 상태
     const [boothId, setBoothId] = useState("");
     const [amount, setAmount] = useState<number | "">("");
     const [mode, setMode] = useState<"SET" | "ADD" | "CLEAR">("ADD");
@@ -49,14 +48,24 @@ export default function AdminActions() {
     const resetUsers = wrap(async () => {
         const data = await callApi("/api/admin/reset-users");
         setMessage(
-            `모든 유저 잔액 초기화 완료 (총 ${data.count ?? "?"}명). 페이지를 새로고침하면 반영됩니다.`
+            data.message ||
+            `모든 유저 잔액 초기화 완료 (총 ${data.count ?? "?"}명).`
         );
     });
 
     const resetBooths = wrap(async () => {
         const data = await callApi("/api/admin/reset-booths");
         setMessage(
-            `모든 부스 잔액 초기화 완료 (총 ${data.count ?? "?"}개). 페이지를 새로고침하면 반영됩니다.`
+            data.message ||
+            `모든 부스 잔액 초기화 완료 (총 ${data.count ?? "?"}개).`
+        );
+    });
+
+    const resetTransactions = wrap(async () => {
+        const data = await callApi("/api/admin/reset-transactions");
+        setMessage(
+            data.message ||
+            `전체 거래내역 삭제 완료 (총 ${data.count ?? "?"}건).`
         );
     });
 
@@ -90,8 +99,8 @@ export default function AdminActions() {
         <section className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-50">관리자 액션</h2>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                {/* 전체 초기화 버튼들 */}
+            {/* 상단 3개 버튼: 유저 초기화 / 부스 초기화 / 거래내역 초기화 */}
+            <div className="grid gap-3 sm:grid-cols-3">
                 <button
                     onClick={resetUsers}
                     disabled={loading}
@@ -106,6 +115,14 @@ export default function AdminActions() {
                     className="rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:bg-orange-900"
                 >
                     모든 부스 잔액 0으로 초기화
+                </button>
+
+                <button
+                    onClick={resetTransactions}
+                    disabled={loading}
+                    className="rounded-md bg-slate-600 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:bg-slate-900"
+                >
+                    전체 거래내역 삭제
                 </button>
             </div>
 
@@ -147,7 +164,7 @@ export default function AdminActions() {
                         </select>
                     </div>
 
-                    {(mode === "ADD" || mode === "SET") && (
+                    {(mode === "SET" || mode === "ADD") && (
                         <div>
                             <label className="block text-xs text-gray-300 mb-1">금액</label>
                             <input
