@@ -117,7 +117,7 @@ export default function BoothDashboard({
             <section className="p-4 border rounded-lg shadow-sm bg-white space-y-1">
                 <h2 className="text-lg font-semibold text-gray-900">부스 보유 북수리</h2>
                 <p className="text-3xl font-bold text-blue-600">
-                    {boothBalance.toLocaleString()} C
+                    {boothBalance.toLocaleString()} B
                 </p>
                 {rank && rank > 0 && (
                     <p className="text-sm text-gray-700">
