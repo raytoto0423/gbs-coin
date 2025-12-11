@@ -4,13 +4,14 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 import { redirect } from "next/navigation";
+import ClassPresidentPanel from "./ClassPresidentPanel";
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
 
 export default async function UserPage() {
     const session = await auth();
 
-    // 🔥 변경된 부분: 로그인 안 되어 있으면 자동 리디렉션
+    // 🔥 로그인 안 되어 있으면 자동 리디렉션
     if (!session?.user) {
         redirect("/login/user");
     }
@@ -86,7 +87,7 @@ export default async function UserPage() {
     if (isAdminAccount) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4">
-                <h1 className="text-2xl font-bold text-gray-50">
+                <h1 className="text-2xl font-bold text-gray-900">
                     관리자 계정입니다.
                 </h1>
                 <p className="text-sm text-gray-700 text-center">
@@ -127,7 +128,7 @@ export default async function UserPage() {
             {/* 헤더 */}
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-50 text-stroke-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-50">
                         {user.name}님 환영합니다.
                     </h1>
                     <p className="text-gray-400 text-sm">{user.email}</p>
@@ -148,32 +149,12 @@ export default async function UserPage() {
                 <LogoutButton />
             </div>
 
-            {/* ✅ 회장 전용 안내 + 부스 비밀번호 변경 버튼 */}
+            {/* ✅ 회장 전용: 부스 비밀번호 변경 패널 */}
             {isClassPresident && hasClassInfo && (
-                <section className="p-4 border rounded-lg bg-blue-50 text-sm text-gray-900 space-y-3">
-                    <div className="space-y-1">
-                        <p className="font-semibold">
-                            ✅ {classLabel} 회장 계정으로 로그인 중입니다.
-                        </p>
-                        <p>
-                            본인 반 부스의 비밀번호를 변경할 수 있습니다.
-                            <br />
-                            (부스 로그인 ID:{" "}
-                            <span className="font-mono">
-                                {user.grade}-{user.classRoom}
-                            </span>
-                            )
-                        </p>
-                    </div>
-
-                    {/* 🔥 여기서 실제 비밀번호 변경 페이지로 이동 */}
-                    <Link
-                        href="/booths/change-password" // 필요하면 이 경로만 바꿔줘
-                        className="inline-block px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700"
-                    >
-                        부스 비밀번호 변경하기
-                    </Link>
-                </section>
+                <ClassPresidentPanel
+                    grade={user.grade!}
+                    classRoom={user.classRoom!}
+                />
             )}
 
             {/* 잔액 */}
@@ -199,7 +180,7 @@ export default async function UserPage() {
 
             {/* 최근 거래내역 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3 text-gray-50 text-stroke-gray-900">
+                <h2 className="text-lg font-semibold mb-3 text-gray-50">
                     최근 거래 내역
                 </h2>
 
