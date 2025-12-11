@@ -153,14 +153,6 @@ export default async function UserPage() {
                         >
                             QR 스캔하여 결제하기
                         </Link>
-
-                        {/* 🔥 부스 순위 확인하기 버튼 */}
-                        <Link
-                            href="/ranking"
-                            className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
-                        >
-                            부스 순위 확인하기
-                        </Link>
                     </div>
                 </div>
             </section>
