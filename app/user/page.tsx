@@ -145,9 +145,9 @@ export default async function UserPage() {
             <section className="p-4 border rounded-lg bg-white shadow-sm space-y-3">
                 <div className="flex items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">보유 코인</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">보유 북수리</h2>
                         <p className="text-3xl font-bold text-blue-600">
-                            {user.balance.toLocaleString()} C
+                            {user.balance.toLocaleString()} B
                         </p>
                     </div>
 
@@ -205,8 +205,8 @@ export default async function UserPage() {
                                         }`}
                                     >
                                         {amountSigned > 0
-                                            ? `+${amountSigned} C`
-                                            : `${amountSigned} C`}
+                                            ? `+${amountSigned} B`
+                                            : `${amountSigned} B`}
                                     </p>
                                 </div>
                             );
