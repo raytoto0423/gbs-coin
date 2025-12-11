@@ -148,21 +148,31 @@ export default async function UserPage() {
                 <LogoutButton />
             </div>
 
-            {/* 회장 전용 안내 */}
+            {/* ✅ 회장 전용 안내 + 부스 비밀번호 변경 버튼 */}
             {isClassPresident && hasClassInfo && (
-                <section className="p-4 border rounded-lg bg-blue-50 text-sm text-gray-900 space-y-1">
-                    <p className="font-semibold">
-                        ✅ {classLabel} 회장 계정으로 로그인 중입니다.
-                    </p>
-                    <p>
-                        본인 반 부스의 비밀번호를 변경할 수 있습니다.
-                        <br />
-                        (부스 로그인 ID:{" "}
-                        <span className="font-mono">
-                            {user.grade}-{user.classRoom}
-                        </span>
-                        )
-                    </p>
+                <section className="p-4 border rounded-lg bg-blue-50 text-sm text-gray-900 space-y-3">
+                    <div className="space-y-1">
+                        <p className="font-semibold">
+                            ✅ {classLabel} 회장 계정으로 로그인 중입니다.
+                        </p>
+                        <p>
+                            본인 반 부스의 비밀번호를 변경할 수 있습니다.
+                            <br />
+                            (부스 로그인 ID:{" "}
+                            <span className="font-mono">
+                                {user.grade}-{user.classRoom}
+                            </span>
+                            )
+                        </p>
+                    </div>
+
+                    {/* 🔥 여기서 실제 비밀번호 변경 페이지로 이동 */}
+                    <Link
+                        href="/booths/change-password" // 필요하면 이 경로만 바꿔줘
+                        className="inline-block px-4 py-2 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700"
+                    >
+                        부스 비밀번호 변경하기
+                    </Link>
                 </section>
             )}
 
