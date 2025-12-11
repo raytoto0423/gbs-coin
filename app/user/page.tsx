@@ -1,3 +1,4 @@
+// app/user/page.tsx
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -28,11 +29,12 @@ export default async function UserPage() {
             email: true,
             grade: true,
             classRoom: true,
+            number: true,
             classRole: true,
         },
     });
 
-    // 유저 없으면 자동 생성
+    // 없으면 자동 생성
     if (!user) {
         user = await prisma.user.create({
             data: {
@@ -41,6 +43,17 @@ export default async function UserPage() {
                 name: session.user.name ?? "",
                 role: email === ADMIN_EMAIL ? "ADMIN" : "STUDENT",
                 balance: 0,
+            },
+            select: {
+                id: true,
+                name: true,
+                balance: true,
+                role: true,
+                email: true,
+                grade: true,
+                classRoom: true,
+                number: true,
+                classRole: true,
             },
         });
     }
@@ -53,14 +66,15 @@ export default async function UserPage() {
     const isClassPresident = classRole === "회장";
     const isVicePresident = classRole === "부회장";
 
-    // 관리자 계정이면 접근 불가 안내
+    // 관리자 계정이면 학생 화면 차단
     if (isAdminAccount) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center px-4 space-y-4">
                 <h1 className="text-2xl font-bold text-gray-50">관리자 계정입니다.</h1>
                 <p className="text-sm text-gray-300 text-center">
                     관리자는 결제 기능을 사용할 수 없습니다.
-                    <br />관리자 페이지를 이용해 주세요.
+                    <br />
+                    관리자 페이지를 이용해 주세요.
                 </p>
 
                 <div className="flex gap-3">
@@ -106,77 +120,69 @@ export default async function UserPage() {
 
                     <p className="text-gray-400 text-sm">{user.email}</p>
 
+                    {/* 학급 정보 + 회장/부회장 뱃지 */}
                     {grade && classRoom && (
                         <p className="text-sm text-gray-200 mt-1">
                             {grade}학년 {classRoom}반{" "}
                             {classRole && (
                                 <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
-                        {classRole}
-                    </span>
+                                    {classRole}
+                                </span>
                             )}
                         </p>
                     )}
                 </div>
 
-                {/* 🔥 오른쪽 버튼 묶음 */}
-                <div className="flex items-center gap-2">
-                    <Link
-                        href="/ranking"
-                        className="inline-block px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
-                    >
-                        부스 순위
-                    </Link>
-
-                    <LogoutButton />
-                </div>
+                <LogoutButton />
             </div>
 
-            {/* 회장 전용 패널 */}
+            {/* 🔔 관리자에게 문의하기 (상단) */}
+            <section className="flex justify-end">
+                <Link
+                    href="/user/inquiry"
+                    className="inline-block px-3 py-2 rounded-md bg-gray-700 text-white text-xs hover:bg-gray-600"
+                >
+                    관리자에게 문의하기
+                </Link>
+            </section>
+
+            {/* 회장 전용 패널 (부스 비밀번호 변경 등) */}
             {isClassPresident && grade && classRoom && (
                 <ClassPresidentPanel grade={grade} classRoom={classRoom} />
             )}
 
             {/* 잔액 + QR 결제 + 부스 순위 확인하기 */}
             <section className="p-4 border rounded-lg bg-white shadow-sm space-y-3">
-                {/* 헤더 */}
-                <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-bold text-gray-50">
-                            {user.name}님 환영합니다.
-                        </h1>
-
-                        <p className="text-gray-400 text-sm">{user.email}</p>
-
-                        {grade && classRoom && (
-                            <p className="text-sm text-gray-200 mt-1">
-                                {grade}학년 {classRoom}반{" "}
-                                {classRole && (
-                                    <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
-                        {classRole}
-                    </span>
-                                )}
-                            </p>
-                        )}
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-900">보유 코인</h2>
+                        <p className="text-3xl font-bold text-blue-600">
+                            {user.balance.toLocaleString()} C
+                        </p>
                     </div>
 
-                    {/* 🔥 오른쪽: 위에 로그아웃, 아래에 부스 순위 */}
                     <div className="flex flex-col items-end gap-2">
-                        <LogoutButton />
+                        <Link
+                            href="/user/scan"
+                            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                        >
+                            QR 스캔하여 결제하기
+                        </Link>
 
+                        {/* 🔥 부스 순위 확인하기 버튼 */}
                         <Link
                             href="/ranking"
-                            className="inline-block px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
+                            className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
                         >
-                            부스 순위
+                            부스 순위 확인하기
                         </Link>
                     </div>
                 </div>
-
             </section>
 
             {/* 최근 거래내역 */}
             <section>
-                <h2 className="text-lg font-semibold mb-3 text-gray-50 text-stroke-gray-900">
+                <h2 className="text-lg font-semibold mb-3 text-gray-50">
                     최근 거래 내역
                 </h2>
 
