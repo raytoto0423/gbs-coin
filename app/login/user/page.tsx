@@ -29,7 +29,7 @@ export default function UserLoginPage() {
                     <p className="text-sm text-gray-700">
                         학교에서 발급된 구글 계정으로만 로그인할 수 있습니다.
                         <br />
-                        (예: <code>gbs.s25XXXX@ggh.goe.go.kr</code>)
+                        (예: <code>gbs.s2XXXXX@ggh.goe.go.kr</code>)
                     </p>
                 </div>
 
