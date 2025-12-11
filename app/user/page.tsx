@@ -138,23 +138,40 @@ export default async function UserPage() {
 
             {/* 잔액 + QR 결제 + 부스 순위 확인하기 */}
             <section className="p-4 border rounded-lg bg-white shadow-sm space-y-3">
-                <div className="flex items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-900">보유 코인</h2>
-                        <p className="text-3xl font-bold text-blue-600">
-                            {user.balance.toLocaleString()} C
-                        </p>
+                {/* 헤더 */}
+                <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-bold text-gray-50">
+                            {user.name}님 환영합니다.
+                        </h1>
+
+                        <p className="text-gray-400 text-sm">{user.email}</p>
+
+                        {grade && classRoom && (
+                            <p className="text-sm text-gray-200 mt-1">
+                                {grade}학년 {classRoom}반{" "}
+                                {classRole && (
+                                    <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
+                        {classRole}
+                    </span>
+                                )}
+                            </p>
+                        )}
                     </div>
 
+                    {/* 🔥 오른쪽: 위에 로그아웃, 아래에 부스 순위 */}
                     <div className="flex flex-col items-end gap-2">
+                        <LogoutButton />
+
                         <Link
-                            href="/user/scan"
-                            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                            href="/ranking"
+                            className="inline-block px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
                         >
-                            QR 스캔하여 결제하기
+                            부스 순위
                         </Link>
                     </div>
                 </div>
+
             </section>
 
             {/* 최근 거래내역 */}
