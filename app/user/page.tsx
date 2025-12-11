@@ -122,16 +122,6 @@ export default async function UserPage() {
                 <LogoutButton />
             </div>
 
-            {/* 🔔 관리자에게 문의하기 버튼 (상단) */}
-            <section className="flex justify-end">
-                <Link
-                    href="/user/inquiry"
-                    className="inline-block px-3 py-2 rounded-md bg-gray-700 text-white text-xs hover:bg-gray-600"
-                >
-                    관리자에게 문의하기
-                </Link>
-            </section>
-
             {/* 회장 전용 패널 */}
             {isClassPresident && grade && classRoom && (
                 <ClassPresidentPanel grade={grade} classRoom={classRoom} />
