@@ -100,26 +100,35 @@ export default async function UserPage() {
             {/* 헤더 */}
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold text-gray-50 text-stroke-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-50">
                         {user.name}님 환영합니다.
                     </h1>
 
                     <p className="text-gray-400 text-sm">{user.email}</p>
 
-                    {/* 학급 정보 + 회장/부회장 뱃지 */}
                     {grade && classRoom && (
                         <p className="text-sm text-gray-200 mt-1">
                             {grade}학년 {classRoom}반{" "}
                             {classRole && (
                                 <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
-                                    {classRole}
-                                </span>
+                        {classRole}
+                    </span>
                             )}
                         </p>
                     )}
                 </div>
 
-                <LogoutButton />
+                {/* 🔥 오른쪽 버튼 묶음 */}
+                <div className="flex items-center gap-2">
+                    <Link
+                        href="/ranking"
+                        className="inline-block px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
+                    >
+                        부스 순위
+                    </Link>
+
+                    <LogoutButton />
+                </div>
             </div>
 
             {/* 회장 전용 패널 */}

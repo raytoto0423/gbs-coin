@@ -153,6 +153,8 @@ export default async function AdminPage() {
                             {session.user.email} 로 로그인 중
                         </p>
                     </div>
+
+                    {/* 🔥 버튼들 묶음 */}
                     <div className="flex items-center gap-3">
                         <Link
                             href="/user"
@@ -160,14 +162,16 @@ export default async function AdminPage() {
                         >
                             사용자 화면으로
                         </Link>
+
+                        <Link
+                            href="/ranking"
+                            className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-700"
+                        >
+                            부스 순위
+                        </Link>
+
                         <LogoutButton />
                     </div>
-                    <Link
-                        href="/ranking"
-                        className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
-                    >
-                        부스 순위 확인하기
-                    </Link>
                 </header>
 
                 {/* 통계 카드 */}
