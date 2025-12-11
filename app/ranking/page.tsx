@@ -84,7 +84,7 @@ export default async function RankingPage() {
                                     </td>
                                     <td className="px-4 py-2 text-gray-900">{b.name}</td>
                                     <td className="px-4 py-2 text-right font-semibold text-gray-900">
-                                        {b.balance.toLocaleString()} C
+                                        {b.balance.toLocaleString()} B
                                     </td>
                                 </tr>
                             );
