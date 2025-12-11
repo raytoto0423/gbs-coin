@@ -141,11 +141,11 @@ export default function AdminActions() {
             {/* 특정 부스 잔액 조정 폼 */}
             <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-100">
-                    특정 부스 잔액 조정 (부스에 코인 지급 / 초기화)
+                    특정 부스 잔액 조정 (부스에 북수리 지급 / 초기화)
                 </h3>
                 <p className="text-xs text-gray-400">
                     예) ID에 <code className="font-mono">1-3</code> 입력 후, 모드를
-                    &quot;ADD&quot;로 두고 금액 100을 넣으면 1-3 부스에 100C 를 추가 지급합니다.
+                    &quot;ADD&quot;로 두고 금액 100을 넣으면 1-3 부스에 100B 를 추가 지급합니다.
                 </p>
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">

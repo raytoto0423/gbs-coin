@@ -43,7 +43,7 @@ export default function BoothTable({ booths }: { booths: BoothWithActivities[] }
                     <th className="px-3 py-2 text-left">이름</th>
                     <th className="px-3 py-2 text-center">학년</th>
                     <th className="px-3 py-2 text-center">반</th>
-                    <th className="px-3 py-2 text-right">잔액 (C)</th>
+                    <th className="px-3 py-2 text-right">잔액 (B)</th>
                     <th className="px-3 py-2 text-left">비밀번호</th>
                 </tr>
                 </thead>

@@ -162,6 +162,12 @@ export default async function AdminPage() {
                         </Link>
                         <LogoutButton />
                     </div>
+                    <Link
+                        href="/ranking"
+                        className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
+                    >
+                        부스 순위 확인하기
+                    </Link>
                 </header>
 
                 {/* 통계 카드 */}
@@ -212,7 +218,7 @@ export default async function AdminPage() {
                                 <th className="px-3 py-2 text-center">학년</th>
                                 <th className="px-3 py-2 text-center">반</th>
                                 <th className="px-3 py-2 text-center">역할</th>
-                                <th className="px-3 py-2 text-right">잔액 (C)</th>
+                                <th className="px-3 py-2 text-right">잔액 (B)</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -286,7 +292,7 @@ export default async function AdminPage() {
                             <tr className="bg-slate-800/80">
                                 <th className="px-3 py-2 text-left">시간</th>
                                 <th className="px-3 py-2 text-left">제목</th>
-                                <th className="px-3 py-2 text-right">금액 (C)</th>
+                                <th className="px-3 py-2 text-right">금액 (B)</th>
                                 <th className="px-3 py-2 text-left">보낸 쪽</th>
                                 <th className="px-3 py-2 text-left">받는 쪽</th>
                             </tr>

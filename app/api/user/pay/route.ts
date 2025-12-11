@@ -174,7 +174,7 @@ export async function POST(request: Request) {
             message:
                 type === "PAY"
                     ? "결제가 완료되었습니다."
-                    : "코인이 지급되었습니다.",
+                    : "북수리가 지급되었습니다.",
             ...result,
         });
     } catch (e: any) {

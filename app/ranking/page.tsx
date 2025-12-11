@@ -30,9 +30,9 @@ export default async function RankingPage() {
             {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-50">반 부스 코인 순위</h1>
+                    <h1 className="text-2xl font-bold text-gray-50">반 부스 북수리 순위</h1>
                     <p className="text-sm text-gray-700">
-                        현재 기준 각 반 부스의 보유 코인 순위입니다.
+                        현재 기준 각 반 부스의 보유 북수리 순위입니다.
                     </p>
                 </div>
 
@@ -48,7 +48,7 @@ export default async function RankingPage() {
                         <th className="px-4 py-2 text-left text-gray-900">순위</th>
                         <th className="px-4 py-2 text-left text-gray-900">부스 ID</th>
                         <th className="px-4 py-2 text-left text-gray-900">반 이름</th>
-                        <th className="px-4 py-2 text-right text-gray-900">보유 코인</th>
+                        <th className="px-4 py-2 text-right text-gray-900">보유 북수리</th>
                     </tr>
                     </thead>
                     <tbody>

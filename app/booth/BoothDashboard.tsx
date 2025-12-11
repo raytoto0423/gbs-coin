@@ -115,7 +115,7 @@ export default function BoothDashboard({
 
             {/* 부스 잔액 + 순위 표시 */}
             <section className="p-4 border rounded-lg shadow-sm bg-white space-y-1">
-                <h2 className="text-lg font-semibold text-gray-900">부스 보유 코인</h2>
+                <h2 className="text-lg font-semibold text-gray-900">부스 보유 북수리</h2>
                 <p className="text-3xl font-bold text-blue-600">
                     {boothBalance.toLocaleString()} C
                 </p>
@@ -142,7 +142,7 @@ export default function BoothDashboard({
                         className="border rounded-md px-2 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         type="number"
                         min={0}
-                        placeholder="가격(코인)"
+                        placeholder="가격(북수리)"
                         value={price}
                         onChange={(e) =>
                             setPrice(e.target.value === "" ? "" : Number(e.target.value))
@@ -154,8 +154,8 @@ export default function BoothDashboard({
                         value={type}
                         onChange={(e) => setType(e.target.value as ActivityType)}
                     >
-                        <option value="PAY">학생이 코인을 지불 (PAY)</option>
-                        <option value="REWARD">학생이 코인을 받음 (REWARD)</option>
+                        <option value="PAY">학생이 북수리을 지불 (PAY)</option>
+                        <option value="REWARD">학생이 북수리를 받음 (REWARD)</option>
                     </select>
                     <button
                         type="submit"
@@ -183,7 +183,7 @@ export default function BoothDashboard({
                                 <div>
                                     <div className="font-medium text-gray-900">{a.title}</div>
                                     <div className="text-xs text-gray-500">
-                                        {a.price} 코인 ·{" "}
+                                        {a.price} 북수리 ·{" "}
                                         {a.type === "PAY"
                                             ? "학생이 지불"
                                             : "학생이 받음 (리워드)"}

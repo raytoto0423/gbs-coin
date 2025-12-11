@@ -70,17 +70,17 @@ export default function PayClient({
                     <span className="font-semibold">활동:</span> {activityTitle}
                 </p>
                 <p>
-                    <span className="font-semibold">가격:</span> {price} 코인
+                    <span className="font-semibold">가격:</span> {price} 북수리
                 </p>
                 <p>
                     <span className="font-semibold">타입:</span>{" "}
                     {type === "PAY"
-                        ? "학생이 코인을 지불 (PAY)"
-                        : "학생이 코인을 받음 (REWARD)"}
+                        ? "학생이 북수리을 지불 (PAY)"
+                        : "학생이 북수리를 받음 (REWARD)"}
                 </p>
                 <p className="text-gray-600">
                     현재 내 잔액:{" "}
-                    <span className="font-mono font-semibold">{userBalance}</span> 코인
+                    <span className="font-mono font-semibold">{userBalance}</span> 북수리
                 </p>
             </div>
 
@@ -97,7 +97,7 @@ export default function PayClient({
                         ? "처리 중..."
                         : type === "PAY"
                             ? "결제하기"
-                            : "코인 받기"}
+                            : "북수리 받기"}
                 </button>
                 <button
                     onClick={handleCancel}

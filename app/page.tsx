@@ -158,7 +158,7 @@ export default async function UserPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-lg font-semibold text-gray-900">
-                            보유 코인
+                            보유 북수리
                         </h2>
                         <p className="text-3xl font-bold text-blue-600">
                             {user.balance.toLocaleString()} C

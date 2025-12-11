@@ -127,9 +127,9 @@ export default async function UserPage() {
                 <ClassPresidentPanel grade={grade} classRoom={classRoom} />
             )}
 
-            {/* 잔액 */}
-            <section className="p-4 border rounded-lg bg-white shadow-sm space-y-2">
-                <div className="flex items-center justify-between">
+            {/* 잔액 + QR 결제 + 부스 순위 확인하기 */}
+            <section className="p-4 border rounded-lg bg-white shadow-sm space-y-3">
+                <div className="flex items-center justify-between gap-4">
                     <div>
                         <h2 className="text-lg font-semibold text-gray-900">보유 코인</h2>
                         <p className="text-3xl font-bold text-blue-600">
@@ -137,12 +137,22 @@ export default async function UserPage() {
                         </p>
                     </div>
 
-                    <Link
-                        href="/user/scan"
-                        className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                    >
-                        QR 스캔하여 결제하기
-                    </Link>
+                    <div className="flex flex-col items-end gap-2">
+                        <Link
+                            href="/user/scan"
+                            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                        >
+                            QR 스캔하여 결제하기
+                        </Link>
+
+                        {/* 🔥 부스 순위 확인하기 버튼 */}
+                        <Link
+                            href="/ranking"
+                            className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs"
+                        >
+                            부스 순위 확인하기
+                        </Link>
+                    </div>
                 </div>
             </section>
 
