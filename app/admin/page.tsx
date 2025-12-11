@@ -6,6 +6,7 @@ import Link from "next/link";
 import AdminActions from "./AdminActions";
 import AdminUserActions from "./AdminUserActions";
 import AdminInquiries from "./AdminInquiries";
+import BoothTable from "./BoothTable";
 
 
 const ADMIN_EMAIL = "dhhwang423@gmail.com";
@@ -84,8 +85,18 @@ export default async function AdminPage() {
                     classRoom: true,
                     balance: true,
                     passwordPlain: true,
+                    activities: {
+                        select: {
+                            id: true,
+                            title: true,
+                            price: true,
+                            type: true,
+                            isActive: true,
+                        },
+                    },
                 },
             }),
+
             prisma.transaction.findMany({
                 orderBy: { createdAt: "desc" },
                 take: 200, // 최신 200건만
@@ -248,46 +259,17 @@ export default async function AdminPage() {
                     </div>
                 </section>
 
-                {/* 부스 목록 + 비밀번호 */}
+                {/* 부스 목록 + 비밀번호 + 활동(상품) 접어서 보기 */}
                 <section>
                     <h2 className="text-lg font-semibold mb-3">
-                        부스 목록 및 비밀번호
+                        부스 목록 / 비밀번호 / 활동(상품)
                     </h2>
-                    <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/60">
-                        <table className="min-w-full text-xs">
-                            <thead>
-                            <tr className="bg-slate-800/80">
-                                <th className="px-3 py-2 text-left">부스 ID</th>
-                                <th className="px-3 py-2 text-left">이름</th>
-                                <th className="px-3 py-2 text-center">학년</th>
-                                <th className="px-3 py-2 text-center">반</th>
-                                <th className="px-3 py-2 text-right">잔액 (C)</th>
-                                <th className="px-3 py-2 text-left">비밀번호</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {booths.map((b) => (
-                                <tr key={b.id} className="border-t border-slate-800">
-                                    <td className="px-3 py-1.5 font-mono">{b.id}</td>
-                                    <td className="px-3 py-1.5">{b.name}</td>
-                                    <td className="px-3 py-1.5 text-center">
-                                        {b.grade ?? "-"}
-                                    </td>
-                                    <td className="px-3 py-1.5 text-center">
-                                        {b.classRoom ?? "-"}
-                                    </td>
-                                    <td className="px-3 py-1.5 text-right">
-                                        {b.balance.toLocaleString()}
-                                    </td>
-                                    <td className="px-3 py-1.5 font-mono">
-                                        {b.passwordPlain ?? "(미설정)"}
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <p className="text-xs text-slate-400 mb-2">
+                        각 부스 행의 왼쪽 화살표를 클릭하면, 해당 부스에 등록된 활동(상품) 목록이 아래로 펼쳐집니다.
+                    </p>
+                    <BoothTable booths={booths as any} />
                 </section>
+
 
                 {/* 전체 거래 내역 (최근 200건) */}
                 <section>
